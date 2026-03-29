@@ -544,7 +544,7 @@ export default function EvacuationRouter({ map, onRouteSelected }: EvacuationRou
                       </div>
 
                       {/* Stats row */}
-                      <div className="grid grid-cols-3 gap-2 mb-2">
+                      <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
                         <div className="flex items-center gap-1">
                           <Clock className="w-3 h-3 text-slate-400" />
                           <span className="text-[11px] text-slate-300">{route.duration}</span>

@@ -130,11 +130,11 @@ export default function Dashboard() {
     : 'Hurricane Helena -- Tampa Bay Response Coordination (Simulation)';
 
   return (
-    <div className="p-5 space-y-4 min-h-full">
+    <div className="min-h-full space-y-4 p-4 sm:p-5">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-lg font-semibold text-foreground">Command Dashboard</h1>
             {/* Mode badge */}
             <span className={cn(
@@ -146,9 +146,9 @@ export default function Dashboard() {
               {isLive ? 'LIVE' : 'SIMULATION'}
             </span>
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-xl">{subtitle}</p>
+          <p className="mt-0.5 max-w-xl text-xs text-muted-foreground sm:truncate">{subtitle}</p>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex flex-col gap-2 sm:flex-shrink-0 sm:items-end">
           {/* Live sync countdown (compact) */}
           {isLive && (
             <LiveSyncBadge
@@ -167,7 +167,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[
           {
             label: 'Active Alerts',
@@ -228,9 +228,9 @@ export default function Dashboard() {
       </div>
 
       {/* Main grid */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         {/* Left 2/3 */}
-        <div className="col-span-2 space-y-4">
+        <div className="space-y-4 xl:col-span-2">
 
           {/* Storm / Weather data */}
           <div className="bg-card border border-border/50 rounded-xl p-4">
@@ -249,7 +249,7 @@ export default function Dashboard() {
                 </span>
               </div>
             </div>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
               {(isLive ? [
                 {
                   icon: Wind,
@@ -308,7 +308,7 @@ export default function Dashboard() {
                 {isLive ? 'KTPA Live' : 'Simulation'}
               </span>
             </div>
-            <ResponsiveContainer width="100%" height={150}>
+            <ResponsiveContainer width="100%" height={180}>
               {isLive ? (
                 <LineChart data={liveChartData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
@@ -358,7 +358,7 @@ export default function Dashboard() {
               </Link>
             </div>
             <div className="relative rounded-lg overflow-hidden">
-              <img src={MAP_IMG} alt="Tampa Bay" className="w-full h-36 object-cover opacity-75" />
+              <img src={MAP_IMG} alt="Tampa Bay" className="h-44 w-full object-cover opacity-75 sm:h-36" />
               <div className="absolute inset-0 bg-gradient-to-t from-card/80 via-transparent to-transparent" />
               {/* Live mode: show all-clear overlay when no threat */}
               {isLive && threatLevel === 'monitoring' && (
@@ -496,7 +496,7 @@ export default function Dashboard() {
               <span className="text-[11px] text-muted-foreground">{alerts.length} total</span>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
             {alerts.slice(0, 4).map(alert => (
               <div key={alert.id} className={cn('flex items-start gap-2.5 p-3 rounded-lg border', PRIORITY_BADGE[alert.priority])}>
                 <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
@@ -515,7 +515,7 @@ export default function Dashboard() {
 
       {/* Live mode all-clear banner */}
       {isLive && threatLevel === 'monitoring' && alerts.length === 0 && (
-        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 flex items-center gap-3">
+        <div className="flex flex-col gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 sm:flex-row sm:items-center">
           <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
             <span className="text-emerald-400 text-sm">✓</span>
           </div>

@@ -42,9 +42,9 @@ export default function Resources() {
   const shelterPct = Math.round((totalOcc / totalCap) * 100);
 
   return (
-    <div className="p-5 space-y-5 min-h-full">
+    <div className="min-h-full space-y-5 p-4 sm:p-5">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-lg font-semibold">Resources</h1>
           <p className="text-xs text-muted-foreground mt-0.5">Shelters, supply depots, medical facilities, and evacuation routes</p>
@@ -57,7 +57,7 @@ export default function Resources() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[
           { label: 'Total Shelters',    value: shelters.length,                                 icon: Building2, text: 'text-blue-400',    bg: 'bg-blue-400/10',    sub: `${totalCap.toLocaleString()} capacity` },
           { label: 'Shelter Occupancy', value: `${shelterPct}%`,                                icon: Users,     text: shelterPct > 80 ? 'text-red-400' : 'text-amber-400', bg: shelterPct > 80 ? 'bg-red-400/10' : 'bg-amber-400/10', sub: `${totalOcc.toLocaleString()} / ${totalCap.toLocaleString()}` },
@@ -120,7 +120,7 @@ export default function Resources() {
       )}
 
       {/* Resource cards */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
         {filteredResources.map(res => {
           const meta = TYPE_META[res.type];
           const Icon = meta?.icon ?? Package;

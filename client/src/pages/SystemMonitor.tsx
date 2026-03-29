@@ -128,9 +128,9 @@ export default function SystemMonitor() {
   } = usePipelineStream();
 
   return (
-    <div className="p-5 space-y-5 min-h-full">
+    <div className="min-h-full space-y-5 p-4 sm:p-5">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-lg font-semibold flex items-center gap-2">
             <Activity className="w-5 h-5 text-cyan-400" />
@@ -140,7 +140,7 @@ export default function SystemMonitor() {
             Live service health and pipeline execution stream
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {isConnected ? (
             <span className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-lg">
               <Wifi className="w-3 h-3" />SSE Connected
@@ -174,13 +174,13 @@ export default function SystemMonitor() {
         </div>
 
         {health ? (
-          <div className="grid grid-cols-7 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
             {Object.entries(health.services).map(([id, service]) => (
               <ServiceCard key={id} id={id} service={service as { status: string; label: string; version?: string; agents?: number; tables?: number; endpoints?: number; note?: string }} />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-7 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
             {['node_server', 'python_adk', 'database', 'noaa_api', 'llm_service', 'shelter_feed', 'routing_service'].map(id => {
               const Icon = SERVICE_ICONS[id] ?? Server;
               return (
@@ -197,7 +197,7 @@ export default function SystemMonitor() {
       </div>
 
       {/* Pipeline Stream */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         {/* Controls */}
         <div className="space-y-3">
           <div className="bg-card border border-border/50 rounded-xl p-4">
@@ -281,7 +281,7 @@ export default function SystemMonitor() {
         </div>
 
         {/* Event log */}
-        <div className="col-span-2 bg-card border border-border/50 rounded-xl p-4">
+        <div className="bg-card border border-border/50 rounded-xl p-4 xl:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-medium">Live Event Log</h2>
             {isStreaming && (

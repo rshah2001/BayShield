@@ -40,55 +40,57 @@ export default function Landing() {
         </div>
 
         {/* Nav */}
-        <nav className="relative z-20 flex items-center justify-between max-w-[1400px] mx-auto w-full px-6 py-5">
-          <div className="flex items-center gap-3">
+        <nav className="relative z-20 mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 px-4 py-5 sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(96,165,250,0.25), rgba(56,189,248,0.15))', border: '1px solid rgba(96,165,250,0.35)' }}>
               <Shield className="w-4 h-4" style={{ color: '#60a5fa' }} />
             </div>
-            <span className="text-lg font-semibold tracking-tight" style={{ color: '#f1f5f9' }}>
+            <span className="truncate text-base font-semibold tracking-tight sm:text-lg" style={{ color: '#f1f5f9' }}>
               Bay<span style={{ color: '#60a5fa' }}>Shield</span>
             </span>
             <span className="text-[11px] font-mono px-1.5 py-0.5 rounded" style={{ background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.2)', color: '#60a5fa' }}>v3.0</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <a href="#architecture" className="text-sm hidden md:block" style={{ color: '#94a3b8' }}>Architecture</a>
             <a href="#features" className="text-sm hidden md:block" style={{ color: '#94a3b8' }}>Features</a>
             <Link href="/dashboard">
-              <span className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer" style={{ background: 'rgba(96,165,250,0.15)', border: '1px solid rgba(96,165,250,0.3)', color: '#93c5fd' }}>
-                Dashboard <ChevronRight className="w-3.5 h-3.5" />
+              <span className="flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium sm:px-4" style={{ background: 'rgba(96,165,250,0.15)', border: '1px solid rgba(96,165,250,0.3)', color: '#93c5fd' }}>
+                <span className="hidden sm:inline">Dashboard</span>
+                <span className="sm:hidden">Open</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </span>
             </Link>
           </div>
         </nav>
 
         {/* Hero Content */}
-        <div className="relative z-10 flex-1 flex flex-col justify-center max-w-[1400px] mx-auto w-full px-6 pb-24">
+        <div className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 flex-col justify-center px-4 pb-20 sm:px-6 sm:pb-24">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-mono mb-6" style={{ background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.2)', color: '#60a5fa' }}>
               <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
               MULTI-AGENT DISASTER RESPONSE · TAMPA BAY
             </div>
-            <h1 className="text-5xl md:text-7xl font-semibold mb-5 leading-none tracking-tight" style={{ color: '#f1f5f9' }}>
+            <h1 className="mb-5 text-4xl font-semibold leading-none tracking-tight sm:text-5xl md:text-7xl" style={{ color: '#f1f5f9' }}>
               Bay<span style={{ color: '#60a5fa' }}>Shield</span>
             </h1>
-            <p className="text-lg md:text-xl font-light mb-8 leading-relaxed" style={{ color: '#94a3b8', maxWidth: '520px' }}>
+            <p className="mb-8 text-base font-light leading-relaxed sm:text-lg md:text-xl" style={{ color: '#94a3b8', maxWidth: '520px' }}>
               Four specialist AI agents that monitor weather threats, map vulnerable communities, coordinate resources, and issue targeted evacuation orders --{' '}
               <em style={{ color: '#cbd5e1', fontStyle: 'normal', fontWeight: 500 }}>autonomously</em>.
             </p>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <Link href="/dashboard">
-                <span className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm cursor-pointer" style={{ background: '#2563eb', color: '#fff' }}>
+                <span className="flex cursor-pointer items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium" style={{ background: '#2563eb', color: '#fff' }}>
                   Launch Dashboard <ArrowRight className="w-4 h-4" />
                 </span>
               </Link>
-              <a href="#architecture" className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm" style={{ background: 'rgba(255,255,255,0.06)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <a href="#architecture" className="flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium" style={{ background: 'rgba(255,255,255,0.06)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.1)' }}>
                 View Architecture
               </a>
             </div>
           </div>
 
           {/* Agent pills */}
-          <div className="flex flex-wrap gap-2 mt-10">
+          <div className="mt-8 flex flex-wrap gap-2 sm:mt-10">
             {AGENTS.map(a => (
               <div key={a.name} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono" style={{ background: `${a.color}10`, border: `1px solid ${a.color}20`, color: a.color }}>
                 <span>{a.icon}</span> {a.name}
@@ -102,7 +104,7 @@ export default function Landing() {
 
       {/* ===== ARCHITECTURE ===== */}
       <section id="architecture" className="py-24" style={{ background: '#080f1a' }}>
-        <div className="max-w-[1400px] mx-auto px-6">
+        <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
           <div className="mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono mb-4" style={{ background: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.2)', color: '#a78bfa' }}>AGENT ARCHITECTURE</div>
             <h2 className="text-3xl font-semibold mb-3" style={{ color: '#f1f5f9' }}>How the Mesh Works</h2>
@@ -110,7 +112,7 @@ export default function Landing() {
           </div>
 
           {/* Flow Diagram */}
-          <div className="mb-12 p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="mb-12 rounded-2xl p-4 sm:p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
             <p className="text-[11px] font-mono text-slate-500 mb-6 uppercase tracking-wider">Agent Communication Flow</p>
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               {/* Storm Watcher */}
@@ -192,7 +194,7 @@ export default function Landing() {
           </div>
 
           {/* Agent Network Image */}
-          <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.07)', height: '320px' }}>
+          <div className="overflow-hidden rounded-2xl" style={{ border: '1px solid rgba(255,255,255,0.07)', height: 'min(320px, 52vw)' }}>
             <img src={AGENT_NETWORK_IMG} alt="Agent network visualization" className="w-full h-full object-cover opacity-80" />
           </div>
         </div>
@@ -200,7 +202,7 @@ export default function Landing() {
 
       {/* ===== FEATURES ===== */}
       <section id="features" className="py-24" style={{ background: '#060d18' }}>
-        <div className="max-w-[1400px] mx-auto px-6">
+        <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
           <div className="mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono mb-4" style={{ background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)', color: '#34d399' }}>CAPABILITIES</div>
             <h2 className="text-3xl font-semibold mb-3" style={{ color: '#f1f5f9' }}>Built for Real Emergencies</h2>
@@ -226,7 +228,7 @@ export default function Landing() {
 
       {/* ===== CTA ===== */}
       <section className="py-24" style={{ background: '#080f1a' }}>
-        <div className="max-w-[1400px] mx-auto px-6 text-center">
+        <div className="mx-auto max-w-[1400px] px-4 text-center sm:px-6">
           <h2 className="text-3xl font-semibold mb-4" style={{ color: '#f1f5f9' }}>Ready to Coordinate?</h2>
           <p className="text-base mb-8 mx-auto" style={{ color: '#64748b', maxWidth: '480px' }}>Enter the command center and run the full Hurricane Helena simulation across all 9 phases.</p>
           <Link href="/dashboard">
@@ -239,7 +241,7 @@ export default function Landing() {
 
       {/* ===== FOOTER ===== */}
       <footer className="py-6" style={{ background: '#080f1a', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="max-w-[1400px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="mx-auto flex max-w-[1400px] flex-col items-center justify-between gap-3 px-4 md:flex-row sm:px-6">
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-blue-400" />
             <span className="text-sm font-medium" style={{ color: '#475569' }}>BayShield v3.0</span>

@@ -46,9 +46,9 @@ export default function Infrastructure() {
   const latest = infraPredictions.length > 0 ? infraPredictions[infraPredictions.length - 1] : null;
 
   return (
-    <div className="p-5 space-y-5 min-h-full">
+    <div className="min-h-full space-y-5 p-4 sm:p-5">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-lg font-semibold">Infrastructure Predictions</h1>
           <p className="text-xs text-muted-foreground mt-0.5">AI-generated damage forecasts and recovery timelines</p>
@@ -62,7 +62,7 @@ export default function Infrastructure() {
 
       {/* Current snapshot */}
       {latest ? (
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
             { label: 'Power Outage',    value: `${latest.powerOutagePct}%`,       icon: Zap,         risk: latest.powerOutagePct > 70 ? 'critical' : latest.powerOutagePct > 40 ? 'high' : 'moderate' },
             { label: 'Road Closures',   value: `${latest.roadClosurePct}%`,       icon: Car,         risk: latest.roadClosurePct > 60 ? 'critical' : latest.roadClosurePct > 30 ? 'high' : 'moderate' },
@@ -98,7 +98,7 @@ export default function Infrastructure() {
 
       {/* Charts */}
       {chartData.length > 0 && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           <div className="bg-card border border-border/50 rounded-xl p-4">
             <h2 className="text-sm font-medium mb-3">Power Outage & Road Closures (%)</h2>
             <ResponsiveContainer width="100%" height={180}>
@@ -225,7 +225,7 @@ export default function Infrastructure() {
                     <p className="text-xs font-semibold mt-0.5">{plan.populationCovered.toLocaleString()} covered</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-1.5 mb-3">
+                <div className="mb-3 grid grid-cols-1 gap-1.5 xl:grid-cols-2">
                   {plan.recommendations.map((rec, i) => (
                     <div key={i} className="flex items-start gap-2 text-[11px] text-foreground/80">
                       <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0 mt-0.5" />
