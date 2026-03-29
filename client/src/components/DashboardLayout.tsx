@@ -5,6 +5,7 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useSimulation } from '@/contexts/SimulationContext';
+import LiveSyncBadge from '@/components/LiveSyncBadge';
 import {
   LayoutDashboard,
   MessageSquare,
@@ -35,7 +36,7 @@ const THREAT_STYLES: Record<string, { label: string; dotClass: string; textClass
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
-  const { threatLevel, simulationPhase, totalPhases, isRunning, agents, mode, setMode, startSimulation, resetSimulation } = useSimulation();
+  const { threatLevel, simulationPhase, totalPhases, isRunning, agents, mode, setMode, startSimulation, resetSimulation, liveWeather, lastLivePoll, nextLivePoll } = useSimulation();
   const threat = THREAT_STYLES[threatLevel] ?? THREAT_STYLES.monitoring;
 
   return (
@@ -161,6 +162,18 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
           </div>
+
+          {/* Live sync indicator */}
+          {mode === 'live' && (
+            <div className="px-0.5">
+              <LiveSyncBadge
+                lastPoll={lastLivePoll}
+                nextPoll={nextLivePoll}
+                isLoading={liveWeather?.isLoading ?? false}
+                variant="compact"
+              />
+            </div>
+          )}
 
           {/* Back to landing */}
           <Link href="/">
