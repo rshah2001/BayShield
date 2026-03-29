@@ -144,10 +144,10 @@ export default function MapViewPage() {
   ];
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="flex min-h-full flex-col overflow-hidden xl:h-full xl:flex-row">
       {/* ── Left sidebar ── */}
       <div
-        className="w-80 shrink-0 flex flex-col border-r border-white/8"
+        className="flex w-full shrink-0 flex-col border-b border-white/8 xl:w-80 xl:border-b-0 xl:border-r"
         style={{ background: 'oklch(0.10 0.012 250)' }}
       >
         {/* Sidebar header */}
@@ -168,13 +168,13 @@ export default function MapViewPage() {
         )}
 
         {/* Tab bar */}
-        <div className="flex border-b border-white/8 mt-3">
+        <div className="mt-3 flex overflow-x-auto border-b border-white/8">
           {TABS.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                'flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors border-b-2',
+                'flex min-w-24 flex-1 flex-col items-center gap-1 border-b-2 py-2.5 text-[10px] font-medium transition-colors',
                 activeTab === tab.id
                   ? 'text-blue-400 border-blue-400'
                   : 'text-slate-500 border-transparent hover:text-slate-300'
@@ -195,15 +195,17 @@ export default function MapViewPage() {
         </div>
 
         {/* Tab content */}
-        <div className="flex-1 overflow-hidden">
+        <div className="overflow-hidden xl:flex-1">
           {/* Evacuation Router tab */}
           {activeTab === 'evacuation' && (
-            <EvacuationRouter map={mapInstance} />
+            <div className="max-h-[70vh] overflow-y-auto xl:max-h-none xl:h-full">
+              <EvacuationRouter map={mapInstance} />
+            </div>
           )}
 
           {/* Zones tab */}
           {activeTab === 'zones' && (
-            <div className="overflow-y-auto h-full p-3 space-y-2">
+            <div className="h-full max-h-[70vh] space-y-2 overflow-y-auto p-3 xl:max-h-none">
               {VULNERABILITY_ZONES.sort((a, b) => b.riskScore - a.riskScore).map(zone => {
                 const cfg = ZONE_COLORS[zone.status] ?? ZONE_COLORS.safe;
                 return (
@@ -249,7 +251,7 @@ export default function MapViewPage() {
 
           {/* Resources tab */}
           {activeTab === 'resources' && (
-            <div className="overflow-y-auto h-full p-3 space-y-2">
+            <div className="h-full max-h-[70vh] space-y-2 overflow-y-auto p-3 xl:max-h-none">
               {RESOURCES.filter(r => r.type !== 'evacuation_route').map(res => {
                 const pct = Math.round((res.currentOccupancy / res.capacity) * 100);
                 const statusColor = res.status === 'available' ? '#34d399' : res.status === 'filling' ? '#fbbf24' : '#f87171';
@@ -304,12 +306,12 @@ export default function MapViewPage() {
       </div>
 
       {/* ── Full-bleed Map ── */}
-      <div className="flex-1 relative">
-        <MapView onMapReady={handleMapReady} className="w-full h-full" />
+      <div className="relative min-h-[50vh] flex-1 xl:min-h-0">
+        <MapView onMapReady={handleMapReady} className="h-full min-h-[50vh] w-full xl:min-h-0" />
 
         {/* Map legend overlay */}
         <div
-          className="absolute top-4 right-4 rounded-xl p-3"
+          className="absolute right-3 top-3 rounded-xl p-3 sm:right-4 sm:top-4"
           style={{ background: 'rgba(13,17,23,0.88)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.1)' }}
         >
           <p className="text-[10px] text-slate-500 font-mono uppercase mb-2">Zone Status</p>
@@ -323,7 +325,7 @@ export default function MapViewPage() {
 
         {/* Evacuation route CTA when on other tabs */}
         {activeTab !== 'evacuation' && (
-          <div className="absolute bottom-4 left-4">
+          <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4">
             <button
               onClick={() => setActiveTab('evacuation')}
               className="flex items-center gap-2 bg-blue-500 hover:bg-blue-400 text-white text-xs font-medium px-3 py-2 rounded-lg shadow-lg transition-colors"

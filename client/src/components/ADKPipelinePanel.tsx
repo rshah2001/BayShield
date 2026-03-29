@@ -145,7 +145,7 @@ export default function ADKPipelinePanel() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-sm font-semibold flex items-center gap-2">
             <Cpu className="w-4 h-4 text-cyan-400" />
@@ -155,7 +155,7 @@ export default function ADKPipelinePanel() {
             Real agent execution traces from the backend pipeline
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* ADK service status */}
           <div className={cn(
             'flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border',
@@ -230,7 +230,7 @@ export default function ADKPipelinePanel() {
               </span>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {[
               { label: 'At Risk', value: (result?.total_at_risk || dbRun?.totalAtRisk || 0).toLocaleString(), icon: '👥' },
               { label: 'Action Plans', value: result?.action_plans?.length ?? '—', icon: '📋' },

@@ -48,9 +48,9 @@ export default function AgentComms() {
   const selfCorrections = messages.filter(m => m.eventType?.includes('SELF_CORRECTION')).length;
 
   return (
-    <div className="p-5 space-y-5 min-h-full">
+    <div className="min-h-full space-y-5 p-4 sm:p-5">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-lg font-semibold">Agent Communications</h1>
           <p className="text-xs text-muted-foreground mt-0.5">Real-time A2A message bus -- agent-to-agent protocol</p>
@@ -63,7 +63,7 @@ export default function AgentComms() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[
           { label: 'Total Messages',   value: messages.length, icon: MessageSquare, color: 'text-blue-400',    bg: 'bg-blue-400/10' },
           { label: 'Alert Events',     value: alertCount,      icon: Zap,           color: 'text-red-400',     bg: 'bg-red-400/10' },
@@ -87,14 +87,14 @@ export default function AgentComms() {
       {/* Pipeline */}
       <div className="bg-card border border-border/50 rounded-xl p-4">
         <h2 className="text-sm font-medium mb-4">Agent Pipeline Architecture</h2>
-        <div className="flex items-stretch gap-0">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-stretch xl:gap-0">
           {PIPELINE_STEPS.map((step, i) => {
             const agent = agentMap[step.label];
             const isActive = agent?.status !== 'idle';
             const isParallel = step.role === 'ParallelAgent';
             const isSelfCorrect = step.role.includes('SelfCorrect');
             return (
-              <div key={step.label} className="flex items-center flex-1">
+              <div key={step.label} className="flex flex-1 flex-col xl:flex-row xl:items-center">
                 <div className={cn('flex-1 rounded-xl p-3 border transition-all duration-500',
                   isActive ? 'bg-primary/8 border-primary/25' : 'bg-background/50 border-border/30'
                 )}>
@@ -119,9 +119,9 @@ export default function AgentComms() {
                   )}
                 </div>
                 {i < PIPELINE_STEPS.length - 1 && (
-                  <div className="flex flex-col items-center px-1.5">
-                    <ArrowRight className={cn('w-4 h-4', isActive ? 'text-primary' : 'text-border')} />
-                    {i === 1 && <span className="text-[9px] text-emerald-400 font-mono mt-0.5">parallel</span>}
+                  <div className="flex items-center justify-center py-1 xl:flex-col xl:px-1.5 xl:py-0">
+                    <ArrowRight className={cn('h-4 w-4 rotate-90 xl:rotate-0', isActive ? 'text-primary' : 'text-border')} />
+                    {i === 1 && <span className="ml-1 text-[9px] font-mono text-emerald-400 xl:ml-0 xl:mt-0.5">parallel</span>}
                   </div>
                 )}
               </div>
@@ -134,7 +134,7 @@ export default function AgentComms() {
       <ADKPipelinePanel />
 
       {/* Message log */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
         {/* Sidebar filter */}
         <div className="space-y-3">
           <div className="bg-card border border-border/50 rounded-xl p-4">
@@ -183,7 +183,7 @@ export default function AgentComms() {
         </div>
 
         {/* Message feed */}
-        <div className="col-span-3 bg-card border border-border/50 rounded-xl p-4">
+        <div className="bg-card border border-border/50 rounded-xl p-4 xl:col-span-3">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-medium">A2A Message Log</h2>
             <div className="flex items-center gap-2">
