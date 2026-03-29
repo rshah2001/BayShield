@@ -5,6 +5,7 @@
 import { useSimulation } from '@/contexts/SimulationContext';
 import { cn } from '@/lib/utils';
 import { Zap, Car, Heart, DollarSign, Clock, TrendingUp, CheckCircle2 } from 'lucide-react';
+import InfrastructureVulnerabilityMapper from '@/components/InfrastructureVulnerabilityMapper';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid
@@ -33,7 +34,7 @@ const TOOLTIP_STYLE = {
 };
 
 export default function Infrastructure() {
-  const { infraPredictions, actionPlans, isRunning } = useSimulation();
+  const { infraPredictions, actionPlans, isRunning, threatLevel } = useSimulation();
 
   const chartData = infraPredictions.map(p => ({
     time: p.timeframe,
@@ -95,6 +96,11 @@ export default function Infrastructure() {
           <p className="text-xs text-muted-foreground/60 mt-1">Infrastructure analysis begins when agents reach Phase 6</p>
         </div>
       )}
+
+      <InfrastructureVulnerabilityMapper
+        threatLevel={threatLevel}
+        latestPrediction={latest}
+      />
 
       {/* Charts */}
       {chartData.length > 0 && (

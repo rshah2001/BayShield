@@ -19,7 +19,12 @@ export type FileContent = {
   type: "file_url";
   file_url: {
     url: string;
-    mime_type?: "audio/mpeg" | "audio/wav" | "application/pdf" | "audio/mp4" | "video/mp4" ;
+    mime_type?:
+      | "audio/mpeg"
+      | "audio/wav"
+      | "application/pdf"
+      | "audio/mp4"
+      | "video/mp4";
   };
 };
 
@@ -60,8 +65,12 @@ export type InvokeParams = {
   tools?: Tool[];
   toolChoice?: ToolChoice;
   tool_choice?: ToolChoice;
+  model?: string;
   maxTokens?: number;
   max_tokens?: number;
+  temperature?: number;
+  thinkingBudgetTokens?: number;
+  thinking_budget_tokens?: number;
   outputSchema?: OutputSchema;
   output_schema?: OutputSchema;
   responseFormat?: ResponseFormat;
@@ -121,15 +130,7 @@ const normalizeContentPart = (
     return { type: "text", text: part };
   }
 
-  if (part.type === "text") {
-    return part;
-  }
-
-  if (part.type === "image_url") {
-    return part;
-  }
-
-  if (part.type === "file_url") {
+  if (part.type === "text" || part.type === "image_url" || part.type === "file_url") {
     return part;
   }
 
@@ -153,8 +154,6 @@ const normalizeMessage = (message: Message) => {
   }
 
   const contentParts = ensureArray(message.content).map(normalizeContentPart);
-
-  // If there's only text content, collapse to a single string for compatibility
   if (contentParts.length === 1 && contentParts[0].type === "text") {
     return {
       role,
@@ -216,7 +215,9 @@ const resolveApiUrl = () =>
 
 const assertApiKey = () => {
   if (!ENV.forgeApiKey) {
-    throw new Error("OPENAI_API_KEY is not configured");
+    throw new Error(
+      "No LLM API key is configured. Set BUILT_IN_FORGE_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, or GOOGLE_API_KEY."
+    );
   }
 };
 
@@ -273,14 +274,21 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     tools,
     toolChoice,
     tool_choice,
+    model,
+    maxTokens,
+    max_tokens,
+    temperature,
+    thinkingBudgetTokens,
+    thinking_budget_tokens,
     outputSchema,
     output_schema,
     responseFormat,
     response_format,
   } = params;
 
+  const resolvedModel = model || ENV.llmModel;
   const payload: Record<string, unknown> = {
-    model: "gemini-2.5-flash",
+    model: resolvedModel,
     messages: messages.map(normalizeMessage),
   };
 
@@ -296,9 +304,22 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.tool_choice = normalizedToolChoice;
   }
 
-  payload.max_tokens = 32768
-  payload.thinking = {
-    "budget_tokens": 128
+  payload.max_tokens = maxTokens ?? max_tokens ?? 32768;
+
+  if (typeof temperature === "number") {
+    payload.temperature = temperature;
+  }
+
+  const thinkingBudget = thinkingBudgetTokens ?? thinking_budget_tokens ?? 128;
+  if (
+    typeof thinkingBudget === "number" &&
+    Number.isFinite(thinkingBudget) &&
+    thinkingBudget > 0 &&
+    /gemini/i.test(resolvedModel)
+  ) {
+    payload.thinking = {
+      budget_tokens: thinkingBudget,
+    };
   }
 
   const normalizedResponseFormat = normalizeResponseFormat({
@@ -321,12 +342,12 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     body: JSON.stringify(payload),
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `LLM invoke failed: ${response.status} ${response.statusText} – ${errorText}`
-    );
+  if (response.ok) {
+    return (await response.json()) as InvokeResult;
   }
 
-  return (await response.json()) as InvokeResult;
+  const errorText = await response.text();
+  throw new Error(
+    `LLM invoke failed: ${response.status} ${response.statusText} - ${errorText}`
+  );
 }

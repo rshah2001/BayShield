@@ -62,13 +62,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const sidebarContent = (
     <>
-      <div className="flex items-center gap-2.5 border-b border-white/[0.06] px-4 py-4">
+      <div className="border-b border-white/[0.06] bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] px-4 py-4">
+        <div className="flex items-center gap-2.5">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-primary/30 bg-primary/20">
           <Shield className="h-4 w-4 text-primary" />
         </div>
         <div>
           <div className="text-sm font-semibold tracking-tight text-foreground">BayShield</div>
           <div className="font-mono text-[10px] text-muted-foreground">v3.0 · Tampa Bay</div>
+        </div>
         </div>
       </div>
 
@@ -96,8 +98,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <Link key={path} href={path}>
               <div
                 className={cn(
-                  'flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150',
-                  active ? 'bg-primary/15 font-medium text-primary' : 'text-muted-foreground hover:bg-white/[0.04] hover:text-foreground'
+                  'flex cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-all duration-150',
+                  active
+                    ? 'border border-primary/24 bg-[linear-gradient(180deg,rgba(96,165,250,0.2),rgba(56,189,248,0.08))] font-medium text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
+                    : 'border border-transparent text-muted-foreground hover:border-white/8 hover:bg-white/[0.05] hover:text-foreground'
                 )}
               >
                 <Icon className={cn('h-4 w-4 flex-shrink-0', active ? 'text-primary' : '')} />
@@ -198,21 +202,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground lg:h-screen lg:overflow-hidden">
-      <aside className="hidden w-56 flex-shrink-0 flex-col border-r border-white/[0.06] bg-[oklch(0.11_0.013_250)] lg:flex">
+    <div className="flex min-h-screen bg-transparent text-foreground lg:h-screen lg:overflow-hidden">
+      <aside className="hidden w-56 flex-shrink-0 flex-col border-r border-white/[0.06] bg-[oklch(0.11_0.013_250/0.76)] backdrop-blur-xl lg:flex">
         {sidebarContent}
       </aside>
 
       {isMobileNavOpen && (
         <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setIsMobileNavOpen(false)}>
           <aside
-            className="absolute inset-y-0 left-0 flex w-[86vw] max-w-72 flex-col border-r border-white/[0.08] bg-[oklch(0.11_0.013_250)]"
+            className="absolute inset-y-0 left-0 flex w-[86vw] max-w-72 flex-col border-r border-white/[0.08] bg-[oklch(0.11_0.013_250/0.9)] backdrop-blur-xl"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-end border-b border-white/[0.06] px-4 py-3">
               <button
                 onClick={() => setIsMobileNavOpen(false)}
-                className="rounded-lg border border-white/[0.08] p-2 text-muted-foreground transition-colors hover:bg-white/[0.04] hover:text-foreground"
+            className="rounded-xl border border-white/[0.1] bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02)),rgba(10,18,34,0.4)] p-2 text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-colors hover:bg-white/[0.07] hover:text-foreground"
                 aria-label="Close navigation"
               >
                 <X className="h-4 w-4" />
@@ -224,11 +228,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-[oklch(0.11_0.013_250/0.96)] backdrop-blur lg:hidden">
-          <div className="flex items-center justify-between px-4 py-3">
+        <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-[oklch(0.11_0.013_250/0.52)] px-2 pt-2 backdrop-blur-xl lg:hidden">
+          <div className="flex items-center justify-between rounded-[24px] border border-white/[0.1] bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02)),rgba(10,18,34,0.42)] px-4 py-3 shadow-[0_16px_36px_rgba(2,6,23,0.24),inset_0_1px_0_rgba(255,255,255,0.1)]">
             <button
               onClick={() => setIsMobileNavOpen(true)}
-              className="rounded-lg border border-white/[0.08] p-2 text-muted-foreground transition-colors hover:bg-white/[0.04] hover:text-foreground"
+              className="rounded-xl border border-white/[0.1] bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02)),rgba(10,18,34,0.38)] p-2 text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-colors hover:bg-white/[0.07] hover:text-foreground"
               aria-label="Open navigation"
             >
               <Menu className="h-4 w-4" />
@@ -239,7 +243,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 {threat.label}
               </div>
             </div>
-            <div className="rounded-lg border border-white/[0.08] px-2 py-1 text-[10px] font-mono text-muted-foreground">
+            <div className="rounded-full border border-white/[0.1] bg-white/[0.04] px-2.5 py-1 text-[10px] font-mono text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
               P {simulationPhase}/{totalPhases}
             </div>
           </div>
