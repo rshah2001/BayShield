@@ -57,3 +57,11 @@
 - [x] Affected area overlay: draw wind radius circles on map colored by damage zone (catastrophic/major/moderate/minor)
 - [x] Add Storm Simulator nav item to DashboardLayout sidebar
 - [x] Write vitest tests for simulateStorm procedure
+
+## Storm Simulator UX Fixes
+- [x] Fix drawing mode: stay active after each click so users can keep adding waypoints continuously without re-clicking the button
+- [x] Add "Stop Drawing" button that appears while drawing to explicitly stop
+- [x] 3D hurricane animation panel: Canvas-based spinning vortex traveling the track (HurricaneCanvas.tsx)
+- [x] Vortex scales with category (Cat 1 small → Cat 5 massive), intensifies over warm water, shrinks on landfall
+- [x] Animation shows storm eye, spiral bands, and intensity color matching category colors
+- [x] Playback controls: play/pause/speed (0.5×/1×/2×/4×) and restart button
