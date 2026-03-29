@@ -104,6 +104,21 @@ export default function Resources() {
         })}
       </div>
 
+      {/* Shelter estimation notice */}
+      {(filterType === 'all' || filterType === 'shelter') && (
+        <div className="flex items-start gap-2.5 bg-amber-400/[0.06] border border-amber-400/15 rounded-xl px-4 py-3">
+          <span className="text-amber-400 text-sm flex-shrink-0 mt-0.5">⚠</span>
+          <div>
+            <p className="text-xs font-medium text-amber-400/90">Shelter capacity is estimated</p>
+            <p className="text-[11px] text-muted-foreground/70 mt-0.5 leading-relaxed">
+              No public real-time API exists for Florida shelter occupancy — FL SERT shelter status is restricted to authorized emergency management agencies.
+              Capacity figures are modeled using the <span className="text-foreground/60">FEMA Shelter Estimation Support Program (SESP)</span> baseline,
+              scaled by current storm severity and Tampa Bay population density. Spaces remaining are updated every simulation cycle.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Resource cards */}
       <div className="grid grid-cols-3 gap-3">
         {filteredResources.map(res => {

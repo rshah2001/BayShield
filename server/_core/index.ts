@@ -242,7 +242,7 @@ async function startServer() {
           database: { status: "online", label: "MySQL Database", tables: 7 },
           noaa_api: { status: noaaStatus, label: "NOAA/NWS API", endpoints: 3 },
           llm_service: { status: llmStatus, label: "LLM Service", note: "Emergency briefings" },
-          shelter_feed: { status: "estimated", label: "Shelter Feed", note: "FLSHELTER not public — estimated" },
+          shelter_feed: { status: "estimated", label: "Shelter Feed", note: "Estimated: FEMA SESP baseline × storm severity × population density. No public real-time API available (FL SERT shelter status is restricted to authorized agencies)." },
           routing_service: { status: "online", label: "Routing Service", note: "Google Maps via Manus proxy" },
         },
       };

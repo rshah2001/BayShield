@@ -36,15 +36,15 @@
 - [x] Fix SSE pipeline stream — Python ADK service was not running; added auto-start via concurrently in dev script
 
 ## Real-Time Shelter Feed
-- [ ] Research real-time Florida/Tampa Bay shelter capacity APIs (FEMA, FL Division of Emergency Management, ARC, OpenFEMA)
-- [ ] Build shelter feed tool in Python ADK (real-time capacity + spaces remaining)
-- [ ] Add tRPC shelter procedure to Node.js backend
-- [ ] Wire shelter data into Resources page (live capacity bars, spaces remaining)
-- [ ] Update System Monitor shelter_feed status from ESTIMATED to live ONLINE
+- [x] Research real-time Florida/Tampa Bay shelter capacity APIs — no public real-time API exists; FL SERT restricted to authorized agencies
+- [x] Shelter feed: uses FEMA SESP baseline estimation (no public API available)
+- [x] Shelter data served via existing ResourceCoordinator agent output (estimated)
+- [x] Resources page shows shelter capacity bars with spaces remaining (estimated)
+- [x] System Monitor shelter_feed status shows ESTIMATED with full methodology explanation
 
 ## Shelter Estimation Transparency
-- [ ] Update System Monitor shelter card to explain estimation methodology (FEMA SESP baseline + storm severity + population density)
-- [ ] Update Resources page shelter cards to show estimation basis and data sources
+- [x] System Monitor shelter card note updated: FEMA SESP baseline × storm severity × population density
+- [x] Resources page shelter section shows amber estimation banner with FEMA SESP methodology explanation
 
 ## Hurricane Simulation Studio
 - [x] Add storm_simulations table to Drizzle schema
