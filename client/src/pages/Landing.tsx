@@ -1,5 +1,5 @@
 // ============================================================
-// BAYSHIELD — Landing Page
+// BAYSHIELD -- Landing Page
 // Apple-level premium design, BayShield branding
 // ============================================================
 import { Link } from 'wouter';
@@ -12,7 +12,7 @@ const AGENT_NETWORK_IMG = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663488949
 
 const AGENTS = [
   { name: 'Storm Watcher',        subtitle: 'The Observer',        icon: '🌀', color: '#fbbf24', pattern: 'LoopAgent',               desc: 'Continuously polls NOAA NHC and OpenWeatherMap APIs. Uses a LoopAgent to re-evaluate threat severity on every cycle and escalate when thresholds are crossed.' },
-  { name: 'Vulnerability Mapper', subtitle: 'The Analyst',         icon: '🗺️', color: '#38bdf8', pattern: 'ParallelAgent',           desc: 'Pulls FEMA flood zone data, cross-references with census vulnerability metrics — elderly, low-income, mobility-impaired. Runs in parallel with Agent 3.' },
+  { name: 'Vulnerability Mapper', subtitle: 'The Analyst',         icon: '🗺️', color: '#38bdf8', pattern: 'ParallelAgent',           desc: 'Pulls FEMA flood zone data, cross-references with census vulnerability metrics -- elderly, low-income, mobility-impaired. Runs in parallel with Agent 3.' },
   { name: 'Resource Coordinator', subtitle: 'The Logistics Brain', icon: '📦', color: '#34d399', pattern: 'ParallelAgent',           desc: 'Inventories available shelters, supply depots, and evacuation routes. Runs simultaneously with Vulnerability Mapper, halving total analysis time.' },
   { name: 'Alert Commander',      subtitle: 'The Actor',           icon: '🚨', color: '#f87171', pattern: 'SelfCorrectingLoopAgent', desc: 'Synthesizes all outputs, generates prioritized action plans. A self-correction loop reviews every plan for logical errors and re-runs if conflicts are found.' },
 ];
@@ -72,7 +72,7 @@ export default function Landing() {
               Bay<span style={{ color: '#60a5fa' }}>Shield</span>
             </h1>
             <p className="text-lg md:text-xl font-light mb-8 leading-relaxed" style={{ color: '#94a3b8', maxWidth: '520px' }}>
-              Four specialist AI agents that monitor weather threats, map vulnerable communities, coordinate resources, and issue targeted evacuation orders —{' '}
+              Four specialist AI agents that monitor weather threats, map vulnerable communities, coordinate resources, and issue targeted evacuation orders --{' '}
               <em style={{ color: '#cbd5e1', fontStyle: 'normal', fontWeight: 500 }}>autonomously</em>.
             </p>
             <div className="flex flex-wrap items-center gap-3">
@@ -181,7 +181,7 @@ export default function Landing() {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-sm font-semibold" style={{ color: '#f1f5f9' }}>{agent.name}</h3>
-                      <span className="text-xs" style={{ color: '#64748b' }}>— {agent.subtitle}</span>
+                      <span className="text-xs" style={{ color: '#64748b' }}>-- {agent.subtitle}</span>
                     </div>
                     <span className="text-[11px] font-mono px-1.5 py-0.5 rounded" style={{ background: `${agent.color}12`, color: agent.color, border: `1px solid ${agent.color}25` }}>{agent.pattern}</span>
                   </div>

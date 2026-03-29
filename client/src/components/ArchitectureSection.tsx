@@ -1,5 +1,5 @@
 // ============================================================
-// STORMMESH — ArchitectureSection Component
+// STORMMESH -- ArchitectureSection Component
 // Design: Technical deep-dive into agent architecture with flow diagram
 // ============================================================
 
@@ -20,7 +20,7 @@ const AGENTS_DETAIL = [
       'A2A broadcast to downstream agents',
       'Continuous loop with configurable interval'
     ],
-    trigger: 'Autonomous — polls every 5 minutes',
+    trigger: 'Autonomous -- polls every 5 minutes',
     output: 'Threat level + storm parameters → Agents 2 & 3'
   },
   {
@@ -63,7 +63,7 @@ const AGENTS_DETAIL = [
     subtitle: 'The Actor',
     pattern: 'SelfCorrectingLoopAgent',
     color: '#EF4444',
-    description: 'The final actor in the pipeline. Receives vulnerability data from Agent 2 and resource data from Agent 3, then generates a prioritized action plan. The self-correction LoopAgent reviews its own plan for logical errors (capacity conflicts, routing issues) and re-runs if inconsistencies are detected — earning the bonus points.',
+    description: 'The final actor in the pipeline. Receives vulnerability data from Agent 2 and resource data from Agent 3, then generates a prioritized action plan. The self-correction LoopAgent reviews its own plan for logical errors (capacity conflicts, routing issues) and re-runs if inconsistencies are detected -- earning the bonus points.',
     capabilities: [
       'Multi-source data synthesis',
       'Prioritized alert generation',
@@ -258,7 +258,7 @@ export default function ArchitectureSection() {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="text-lg font-bold" style={{ color: '#F1F5F9' }}>{agent.name}</h3>
-                    <span className="text-sm" style={{ color: '#64748B' }}>— {agent.subtitle}</span>
+                    <span className="text-sm" style={{ color: '#64748B' }}>-- {agent.subtitle}</span>
                   </div>
                   <span
                     className="text-xs font-mono px-2 py-0.5 rounded"
@@ -359,7 +359,7 @@ export default function ArchitectureSection() {
                 Key Design Decisions
               </div>
               {[
-                { title: 'Parallel Execution', desc: 'Agents 2 & 3 run simultaneously — halving analysis time from ~4s to ~2s', color: '#10B981' },
+                { title: 'Parallel Execution', desc: 'Agents 2 & 3 run simultaneously -- halving analysis time from ~4s to ~2s', color: '#10B981' },
                 { title: 'Self-Correction Loop', desc: 'Alert Commander reviews its own plan and re-runs if capacity conflicts are detected', color: '#EF4444' },
                 { title: 'A2A Protocol', desc: 'Structured message passing between agents with typed payloads and acknowledgment', color: '#3B82F6' },
                 { title: 'Graceful Degradation', desc: 'Each agent can operate independently if upstream agents fail', color: '#F59E0B' }
@@ -413,7 +413,7 @@ export default function ArchitectureSection() {
                 StormMesh demonstrates the full spectrum of multi-agent patterns: a LoopAgent for
                 continuous monitoring, a ParallelAgent for simultaneous analysis, and a
                 SelfCorrectingLoopAgent for robust action planning. The A2A protocol ensures
-                every agent communicates with structured, typed messages — not just function calls.
+                every agent communicates with structured, typed messages -- not just function calls.
                 This is production-grade disaster response AI.
               </p>
             </div>

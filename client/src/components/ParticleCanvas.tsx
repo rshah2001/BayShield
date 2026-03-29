@@ -1,5 +1,5 @@
 // ============================================================
-// STORMMESH — ParticleCanvas Component
+// STORMMESH -- ParticleCanvas Component
 // Design: Animated particle field simulating data streams between agents
 // ============================================================
 

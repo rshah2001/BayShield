@@ -1,5 +1,5 @@
 // ============================================================
-// BAYSHIELD — Agent Communications Page
+// BAYSHIELD -- Agent Communications Page
 // Real-time A2A message bus, event types, payload inspector, pipeline viz
 // ============================================================
 import { useState } from 'react';
@@ -52,7 +52,7 @@ export default function AgentComms() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-lg font-semibold">Agent Communications</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Real-time A2A message bus — agent-to-agent protocol</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Real-time A2A message bus -- agent-to-agent protocol</p>
         </div>
         {isRunning && (
           <span className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-lg">

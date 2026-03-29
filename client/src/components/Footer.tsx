@@ -1,5 +1,5 @@
 // ============================================================
-// STORMMESH — Footer Component
+// STORMMESH -- Footer Component
 // Design: Minimal dark footer with system status indicators
 // ============================================================
 
@@ -97,7 +97,7 @@ export default function Footer() {
           style={{ borderTop: '1px solid rgba(59,130,246,0.08)' }}
         >
           <div className="text-xs font-mono" style={{ color: '#334155' }}>
-            StormMesh v2.4.1 — Multi-Agent Disaster Response Coordinator for Tampa Bay
+            StormMesh v2.4.1 -- Multi-Agent Disaster Response Coordinator for Tampa Bay
           </div>
           <div className="flex items-center gap-4">
             <span className="text-xs font-mono" style={{ color: '#334155' }}>

@@ -1,5 +1,5 @@
 // ============================================================
-// STORMMESH — MapAndAlerts Component
+// STORMMESH -- MapAndAlerts Component
 // Design: Tampa Bay flood zone map + prioritized alert feed + charts
 // ============================================================
 
@@ -67,10 +67,10 @@ function AlertCard({ alert }: { alert: Alert }) {
       >
         ▶ {alert.actionRequired}
       </div>
-      {alert.population > 0 && (
+      {(alert.population ?? 0) > 0 && (
         <div className="flex items-center gap-1 mt-2">
           <span className="text-xs font-mono" style={{ color: '#475569' }}>
-            {alert.population.toLocaleString()} residents affected
+            {(alert.population ?? 0).toLocaleString()} residents affected
           </span>
           <span className="text-xs font-mono" style={{ color: '#334155' }}>·</span>
           <span className="text-xs font-mono" style={{ color: '#475569' }}>
@@ -115,7 +115,7 @@ export default function MapAndAlerts({ alerts, weather, threatLevel }: MapAndAle
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Map — 3/5 */}
+          {/* Map -- 3/5 */}
           <div className="lg:col-span-3">
             <div
               className="rounded-xl overflow-hidden relative"
@@ -150,10 +150,10 @@ export default function MapAndAlerts({ alerts, weather, threatLevel }: MapAndAle
                   FLOOD ZONES
                 </div>
                 {[
-                  { label: 'Zone VE — Extreme', color: '#EF4444' },
-                  { label: 'Zone AE — High', color: '#F59E0B' },
-                  { label: 'Zone A — Moderate', color: '#06B6D4' },
-                  { label: 'Zone X — Low', color: '#10B981' }
+                  { label: 'Zone VE -- Extreme', color: '#EF4444' },
+                  { label: 'Zone AE -- High', color: '#F59E0B' },
+                  { label: 'Zone A -- Moderate', color: '#06B6D4' },
+                  { label: 'Zone X -- Low', color: '#10B981' }
                 ].map(z => (
                   <div key={z.label} className="flex items-center gap-2 mb-1">
                     <div className="w-3 h-2 rounded-sm" style={{ background: z.color, opacity: 0.8 }} />
@@ -175,7 +175,7 @@ export default function MapAndAlerts({ alerts, weather, threatLevel }: MapAndAle
                   <div>
                     <div className="text-xs font-mono" style={{ color: '#64748B' }}>ACTIVE THREAT</div>
                     <div className="font-bold" style={{ color: '#F1F5F9' }}>
-                      {weather.stormName} — Category {weather.category}
+                      {weather.stormName} -- Category {weather.category}
                     </div>
                     <div className="text-xs font-mono mt-0.5" style={{ color: '#64748B' }}>
                       {weather.windSpeed} kt · Surge: {weather.surgeHeight}ft · Landfall: {weather.landfall}
@@ -210,7 +210,7 @@ export default function MapAndAlerts({ alerts, weather, threatLevel }: MapAndAle
                 style={{ borderBottom: '1px solid rgba(59,130,246,0.1)' }}
               >
                 <span className="text-xs font-mono font-semibold" style={{ color: '#94A3B8' }}>
-                  VULNERABILITY ANALYSIS — {VULNERABILITY_ZONES.length} ZONES
+                  VULNERABILITY ANALYSIS -- {VULNERABILITY_ZONES.length} ZONES
                 </span>
               </div>
               <div className="overflow-x-auto">
@@ -269,7 +269,7 @@ export default function MapAndAlerts({ alerts, weather, threatLevel }: MapAndAle
             </div>
           </div>
 
-          {/* Right: Alerts + Resources — 2/5 */}
+          {/* Right: Alerts + Resources -- 2/5 */}
           <div className="lg:col-span-2 flex flex-col gap-4">
             {/* Alert Feed */}
             <div

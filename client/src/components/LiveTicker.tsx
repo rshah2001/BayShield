@@ -1,19 +1,19 @@
 // ============================================================
-// STORMMESH — LiveTicker Component
+// STORMMESH -- LiveTicker Component
 // Design: Scrolling emergency broadcast ticker at the bottom of hero
 // ============================================================
 
 import { useEffect, useRef } from 'react';
 
 const TICKER_ITEMS = [
-  '🌀 HURRICANE HELENA — CATEGORY 4 — 145 KT SUSTAINED WINDS',
+  '🌀 HURRICANE HELENA -- CATEGORY 4 -- 145 KT SUSTAINED WINDS',
   '⚠️ MANDATORY EVACUATION: PINELLAS POINT, ST. PETE BEACH, CLEARWATER BEACH',
-  '📍 LANDFALL PROJECTED: TAMPA BAY — 18-22 HOURS',
+  '📍 LANDFALL PROJECTED: TAMPA BAY -- 18-22 HOURS',
   '🏟️ SHELTERS OPEN: USF SUN DOME · YUENGLING CENTER · TROPICANA FIELD',
-  '🛣️ CONTRAFLOW ACTIVE: I-75 NORTH · I-4 EAST — DEPART NOW',
+  '🛣️ CONTRAFLOW ACTIVE: I-75 NORTH · I-4 EAST -- DEPART NOW',
   '📞 SPECIAL NEEDS EVACUATION: HILLSBOROUGH 813-272-5900 · PINELLAS 727-464-3800',
   '🌊 STORM SURGE WARNING: 10-14 FT ABOVE GROUND LEVEL IN SURGE ZONES',
-  '⚡ STORMMESH AGENTS ACTIVE: 4/4 ONLINE — CONTINUOUS MONITORING',
+  '⚡ STORMMESH AGENTS ACTIVE: 4/4 ONLINE -- CONTINUOUS MONITORING',
 ];
 
 export default function LiveTicker() {

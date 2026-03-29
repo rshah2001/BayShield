@@ -1,5 +1,5 @@
 // ============================================================
-// STORMMESH — HeroSection Component
+// STORMMESH -- HeroSection Component
 // Design: Full-bleed hurricane satellite image with glass data panels
 // Includes: LiveTicker, ParticleCanvas, animated stats
 // ============================================================
@@ -92,7 +92,7 @@ export default function HeroSection({
                 animation: 'agentPulse 2s ease-in-out infinite'
               }}
             />
-            MULTI-AGENT DISASTER RESPONSE SYSTEM — TAMPA BAY
+            MULTI-AGENT DISASTER RESPONSE SYSTEM -- TAMPA BAY
           </div>
 
           <h1
@@ -118,7 +118,7 @@ export default function HeroSection({
             style={{ color: '#94A3B8', maxWidth: '520px' }}
           >
             Four specialist AI agents that monitor weather threats, map vulnerable communities,
-            coordinate resources, and issue targeted evacuation orders —{' '}
+            coordinate resources, and issue targeted evacuation orders --{' '}
             <em style={{ color: '#CBD5E1' }}>autonomously</em>.
           </p>
 

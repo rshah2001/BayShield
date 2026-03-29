@@ -1,5 +1,5 @@
 // ============================================================
-// BAYSHIELD — Resources Page
+// BAYSHIELD -- Resources Page
 // Shelters, supply depots, medical, evacuation routes
 // ============================================================
 import { useState } from 'react';

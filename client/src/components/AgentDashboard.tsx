@@ -1,6 +1,6 @@
 // ============================================================
-// STORMMESH — AgentDashboard Component
-// Design: Bioluminescent Storm — 4 agent cards + A2A message feed + system log
+// STORMMESH -- AgentDashboard Component
+// Design: Bioluminescent Storm -- 4 agent cards + A2A message feed + system log
 // Animations: framer-motion entrance + scan line effects
 // ============================================================
 
@@ -117,7 +117,7 @@ function AgentCard({ agent, index }: { agent: AgentState; index: number }) {
         </motion.div>
       </div>
 
-      {/* Last Action — terminal style */}
+      {/* Last Action -- terminal style */}
       <div
         className="text-xs font-mono mb-4 p-2.5 rounded"
         style={{
@@ -144,9 +144,9 @@ function AgentCard({ agent, index }: { agent: AgentState; index: number }) {
       {/* Metrics */}
       <div className="grid grid-cols-3 gap-2 mb-3">
         {[
-          { label: 'LOOPS', value: agent.loopCount > 0 ? agent.loopCount : '—', color: agent.color },
-          { label: 'CONF.', value: agent.confidence > 0 ? `${agent.confidence}%` : '—', color: '#E2E8F0' },
-          { label: 'MS', value: agent.processingTime > 0 ? agent.processingTime : '—', color: '#E2E8F0' }
+          { label: 'LOOPS', value: agent.loopCount > 0 ? agent.loopCount : '--', color: agent.color },
+          { label: 'CONF.', value: agent.confidence > 0 ? `${agent.confidence}%` : '--', color: '#E2E8F0' },
+          { label: 'MS', value: agent.processingTime > 0 ? agent.processingTime : '--', color: '#E2E8F0' }
         ].map(m => (
           <div key={m.label} className="text-center">
             <div className="text-xs font-mono" style={{ color: '#475569' }}>{m.label}</div>
@@ -265,7 +265,7 @@ export default function AgentDashboard({
             </h2>
             <p className="text-base" style={{ color: '#64748B', maxWidth: '600px' }}>
               Each agent operates autonomously, communicating via Agent-to-Agent (A2A) protocol.
-              Agents 2 and 3 run in parallel — the architecture judges want to see.
+              Agents 2 and 3 run in parallel -- the architecture judges want to see.
             </p>
           </div>
 
@@ -285,7 +285,7 @@ export default function AgentDashboard({
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Agent Cards — left 2/3 */}
+          {/* Agent Cards -- left 2/3 */}
           <div className="lg:col-span-2">
             {/* Agent network visualization banner */}
             <div
@@ -399,7 +399,7 @@ export default function AgentDashboard({
               </div>
             </div>
 
-            {/* System Log — terminal style */}
+            {/* System Log -- terminal style */}
             <div
               className="rounded-xl overflow-hidden"
               style={{

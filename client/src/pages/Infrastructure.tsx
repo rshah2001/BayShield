@@ -1,5 +1,5 @@
 // ============================================================
-// BAYSHIELD — Infrastructure Predictions Page
+// BAYSHIELD -- Infrastructure Predictions Page
 // Predictive damage timeline, risk matrix, and action plans
 // ============================================================
 import { useSimulation } from '@/contexts/SimulationContext';

@@ -1,5 +1,5 @@
 // ============================================================
-// STORMMESH — StormIntensityChart Component
+// STORMMESH -- StormIntensityChart Component
 // Design: Recharts area chart showing storm intensity over time
 // ============================================================
 
@@ -57,7 +57,7 @@ export default function StormIntensityChart() {
             STORM INTENSITY TRACK
           </div>
           <div className="text-xs font-mono mt-0.5" style={{ color: '#475569' }}>
-            Hurricane Helena — Wind Speed (kt)
+            Hurricane Helena -- Wind Speed (kt)
           </div>
         </div>
         <div

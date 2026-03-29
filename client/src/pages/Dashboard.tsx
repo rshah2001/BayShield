@@ -1,5 +1,5 @@
 // ============================================================
-// BAYSHIELD — Command Dashboard
+// BAYSHIELD -- Command Dashboard
 // Apple-level premium UI. Auto-updates via SimulationContext.
 // ============================================================
 import { useSimulation } from '@/contexts/SimulationContext';
@@ -74,7 +74,7 @@ export default function Dashboard() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-lg font-semibold text-foreground">Command Dashboard</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Hurricane Helena — Tampa Bay Response Coordination</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Hurricane Helena -- Tampa Bay Response Coordination</p>
         </div>
         <div className={cn('flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-mono font-semibold', ts.bg, ts.border, ts.text)}>
           <span className={cn('w-1.5 h-1.5 rounded-full', ts.dot, threatLevel !== 'monitoring' && 'animate-pulse')} />
@@ -87,7 +87,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-4 gap-3">
         {[
           { label: 'Active Alerts',       value: alerts.length,                                              sub: `${critCount} critical`,           icon: AlertTriangle, accent: critCount > 0 ? '#f87171' : '#64748b' },
-          { label: 'Population at Risk',  value: totalPopulationAtRisk > 0 ? totalPopulationAtRisk.toLocaleString() : '—', sub: `${evacuateCount} zones evacuating`, icon: Users,         accent: '#fbbf24' },
+          { label: 'Population at Risk',  value: totalPopulationAtRisk > 0 ? totalPopulationAtRisk.toLocaleString() : '--', sub: `${evacuateCount} zones evacuating`, icon: Users,         accent: '#fbbf24' },
           { label: 'Shelter Capacity',    value: `${shelterPct}%`,                                           sub: `${totalOcc.toLocaleString()} / ${totalCap.toLocaleString()}`, icon: Building2, accent: shelterPct > 80 ? '#f87171' : '#34d399' },
           { label: 'Zones Monitored',     value: VULNERABILITY_ZONES.length,                                 sub: 'Tampa Bay region',                icon: MapPin,        accent: '#60a5fa' },
         ].map(({ label, value, sub, icon: Icon, accent }) => (

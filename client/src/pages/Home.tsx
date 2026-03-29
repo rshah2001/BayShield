@@ -1,6 +1,6 @@
 // ============================================================
-// STORMMESH — Main Home Page
-// Design: Bioluminescent Storm — deep ocean dark base
+// STORMMESH -- Main Home Page
+// Design: Bioluminescent Storm -- deep ocean dark base
 // Layout: Full-bleed hero → Agent Dashboard → Map/Alerts → Architecture
 // ============================================================
 

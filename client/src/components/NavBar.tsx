@@ -1,6 +1,6 @@
 // ============================================================
-// STORMMESH — NavBar Component
-// Design: Bioluminescent Storm — glass panel nav with threat level indicator
+// STORMMESH -- NavBar Component
+// Design: Bioluminescent Storm -- glass panel nav with threat level indicator
 // ============================================================
 
 import { ThreatLevel } from '@/lib/stormData';

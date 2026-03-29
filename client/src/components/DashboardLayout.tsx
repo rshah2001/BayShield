@@ -1,5 +1,5 @@
 // ============================================================
-// BAYSHIELD — DashboardLayout
+// BAYSHIELD -- DashboardLayout
 // Apple-level sidebar nav with glassmorphism, mode toggle, threat badge
 // ============================================================
 import { ReactNode } from 'react';
@@ -14,7 +14,8 @@ import {
   Shield,
   Radio,
   RotateCcw,
-  ChevronLeft
+  ChevronLeft,
+  Navigation
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
   { path: '/infrastructure', label: 'Infrastructure',  icon: Building2 },
   { path: '/map',            label: 'Map View',        icon: Map },
   { path: '/resources',      label: 'Resources',       icon: Package },
+  { path: '/evacuation',     label: 'Evacuation',      icon: Navigation },
 ];
 
 const THREAT_STYLES: Record<string, { label: string; dotClass: string; textClass: string; bgClass: string }> = {

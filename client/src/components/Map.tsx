@@ -69,9 +69,9 @@
  *
  * -------------------------------
  * ✅ SUMMARY
- * - “map-attached” → AdvancedMarkerElement, DirectionsRenderer, Layers.
- * - “standalone” → Geocoder, DirectionsService, DistanceMatrixService, ElevationService.
- * - “data-only” → Place, Geometry utilities.
+ * - "map-attached" → AdvancedMarkerElement, DirectionsRenderer, Layers.
+ * - "standalone" → Geocoder, DirectionsService, DistanceMatrixService, ElevationService.
+ * - "data-only" → Place, Geometry utilities.
  */
 
 /// <reference types="@types/google.maps" />
@@ -92,7 +92,7 @@ const FORGE_BASE_URL =
   "https://forge.butterfly-effect.dev";
 const MAPS_PROXY_URL = `${FORGE_BASE_URL}/v1/maps/proxy`;
 
-// Singleton promise — ensures the Maps script is injected exactly once per page load
+// Singleton promise -- ensures the Maps script is injected exactly once per page load
 let _mapsLoadPromise: Promise<void> | null = null;
 
 function loadMapScript(): Promise<void> {
@@ -100,7 +100,7 @@ function loadMapScript(): Promise<void> {
   if (window.google?.maps) {
     return Promise.resolve();
   }
-  // Already injecting — reuse the in-flight promise
+  // Already injecting -- reuse the in-flight promise
   if (_mapsLoadPromise) {
     return _mapsLoadPromise;
   }

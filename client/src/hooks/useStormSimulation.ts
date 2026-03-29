@@ -1,5 +1,5 @@
 // ============================================================
-// BAYSHIELD — Simulation Engine
+// BAYSHIELD -- Simulation Engine
 // Auto-runs on mount. Proper agent lifecycle: triggered → running → completed.
 // Structured A2A messages. Event-driven pipeline. No manual trigger required.
 // ============================================================
@@ -30,7 +30,7 @@ const INITIAL_AGENTS: AgentState[] = [
   {
     id: 'storm-watcher',
     name: 'Storm Watcher',
-    role: 'Observer — LoopAgent',
+    role: 'Observer -- LoopAgent',
     status: 'idle',
     lastAction: 'Polling NOAA NHC API...',
     loopCount: 0,
@@ -43,7 +43,7 @@ const INITIAL_AGENTS: AgentState[] = [
   {
     id: 'vulnerability-mapper',
     name: 'Vulnerability Mapper',
-    role: 'Analyst — ParallelAgent',
+    role: 'Analyst -- ParallelAgent',
     status: 'idle',
     lastAction: 'Awaiting threat signal...',
     loopCount: 0,
@@ -56,7 +56,7 @@ const INITIAL_AGENTS: AgentState[] = [
   {
     id: 'resource-coordinator',
     name: 'Resource Coordinator',
-    role: 'Logistics — ParallelAgent',
+    role: 'Logistics -- ParallelAgent',
     status: 'idle',
     lastAction: 'Standby mode...',
     loopCount: 0,
@@ -69,7 +69,7 @@ const INITIAL_AGENTS: AgentState[] = [
   {
     id: 'alert-commander',
     name: 'Alert Commander',
-    role: 'Actor — SelfCorrectingLoopAgent',
+    role: 'Actor -- SelfCorrectingLoopAgent',
     status: 'idle',
     lastAction: 'Waiting for analysis data...',
     loopCount: 0,
@@ -83,10 +83,10 @@ const INITIAL_AGENTS: AgentState[] = [
 
 const INITIAL_LOG = [
   '[SYSTEM] BayShield v3.0 initialized',
-  '[SYSTEM] Agent mesh network online — 4/4 agents ready',
+  '[SYSTEM] Agent mesh network online -- 4/4 agents ready',
   '[SYSTEM] Connecting to NOAA NHC API...',
   '[SYSTEM] Tampa Bay Emergency Management System linked',
-  '[SYSTEM] Auto-monitoring active — scanning for threats'
+  '[SYSTEM] Auto-monitoring active -- scanning for threats'
 ];
 
 export function useStormSimulation() {
@@ -129,14 +129,14 @@ export function useStormSimulation() {
         // Storm Watcher: triggered → running
         updateAgent('storm-watcher', {
           status: 'active',
-          lastAction: 'Detecting Hurricane Helena — Category 4',
+          lastAction: 'Detecting Hurricane Helena -- Category 4',
           loopCount: 1,
           confidence: 72,
           processingTime: 340,
           glowClass: 'dot-active'
         });
         setThreatLevel('advisory');
-        addLog('[Agent-1] Storm Watcher: NOAA alert received — Hurricane Helena Cat-4, 145kt');
+        addLog('[Agent-1] Storm Watcher: NOAA alert received -- Hurricane Helena Cat-4, 145kt');
         addMessage({ ...AGENT_MESSAGES_SEQUENCE[0], status: 'sent' });
         setInfraPredictions(INFRASTRUCTURE_PREDICTIONS.slice(0, 2));
         break;
@@ -145,7 +145,7 @@ export function useStormSimulation() {
         // Storm Watcher: escalating, sends A2A to Agents 2 & 3
         updateAgent('storm-watcher', {
           status: 'processing',
-          lastAction: 'Escalating threat — broadcasting A2A signals',
+          lastAction: 'Escalating threat -- broadcasting A2A signals',
           loopCount: 2,
           confidence: 89,
           processingTime: 520,
@@ -177,8 +177,8 @@ export function useStormSimulation() {
           processingTime: 0,
           glowClass: 'dot-active'
         });
-        addLog('[Agent-2] Vulnerability Mapper: PARALLEL triggered — analyzing flood zones');
-        addLog('[Agent-3] Resource Coordinator: PARALLEL triggered — inventorying resources');
+        addLog('[Agent-2] Vulnerability Mapper: PARALLEL triggered -- analyzing flood zones');
+        addLog('[Agent-3] Resource Coordinator: PARALLEL triggered -- inventorying resources');
         setInfraPredictions(INFRASTRUCTURE_PREDICTIONS.slice(0, 4));
         break;
 
@@ -210,7 +210,7 @@ export function useStormSimulation() {
         // Agents 2 & 3: completed, transmitting to Agent 4
         updateAgent('vulnerability-mapper', {
           status: 'complete',
-          lastAction: 'Analysis complete — 6 high-risk zones mapped',
+          lastAction: 'Analysis complete -- 6 high-risk zones mapped',
           loopCount: 3,
           confidence: 94,
           processingTime: 2100,
@@ -218,7 +218,7 @@ export function useStormSimulation() {
         });
         updateAgent('resource-coordinator', {
           status: 'complete',
-          lastAction: 'Resources pre-positioned — 3 shelters active',
+          lastAction: 'Resources pre-positioned -- 3 shelters active',
           loopCount: 3,
           confidence: 91,
           processingTime: 1870,
@@ -226,8 +226,8 @@ export function useStormSimulation() {
         });
         addMessage({ ...AGENT_MESSAGES_SEQUENCE[3], status: 'received' });
         addMessage({ ...AGENT_MESSAGES_SEQUENCE[4], status: 'received' });
-        addLog('[Agent-2] Vulnerability Mapper: COMPLETED — transmitting dataset to Alert Commander');
-        addLog('[Agent-3] Resource Coordinator: COMPLETED — transmitting allocation matrix');
+        addLog('[Agent-2] Vulnerability Mapper: COMPLETED -- transmitting dataset to Alert Commander');
+        addLog('[Agent-3] Resource Coordinator: COMPLETED -- transmitting allocation matrix');
         setInfraPredictions(INFRASTRUCTURE_PREDICTIONS.slice(0, 6));
         break;
 
@@ -243,7 +243,7 @@ export function useStormSimulation() {
         });
         addMessage({ ...AGENT_MESSAGES_SEQUENCE[5], status: 'received' });
         addMessage({ ...AGENT_MESSAGES_SEQUENCE[6], status: 'received' });
-        addLog('[Agent-4] Alert Commander: TRIGGERED — receiving A2A data from Agents 2 & 3');
+        addLog('[Agent-4] Alert Commander: TRIGGERED -- receiving A2A data from Agents 2 & 3');
         break;
 
       case 6:
@@ -257,7 +257,7 @@ export function useStormSimulation() {
           glowClass: 'dot-processing'
         });
         addMessage({ ...AGENT_MESSAGES_SEQUENCE[7], status: 'processing' });
-        addLog('[Agent-4] Alert Commander: SELF-CORRECTION — detected capacity conflict, re-routing 2,400 residents');
+        addLog('[Agent-4] Alert Commander: SELF-CORRECTION -- detected capacity conflict, re-routing 2,400 residents');
         setActionPlans([ACTION_PLANS[0]]);
         setInfraPredictions(INFRASTRUCTURE_PREDICTIONS.slice(0, 7));
         break;
@@ -266,7 +266,7 @@ export function useStormSimulation() {
         // All agents: critical state, evacuation orders issued
         updateAgent('storm-watcher', {
           status: 'active',
-          lastAction: 'Continuous monitoring — loop 4 active',
+          lastAction: 'Continuous monitoring -- loop 4 active',
           loopCount: 4,
           confidence: 97,
           processingTime: 3400,
@@ -274,7 +274,7 @@ export function useStormSimulation() {
         });
         updateAgent('alert-commander', {
           status: 'complete',
-          lastAction: 'Mandatory evacuation orders issued — all zones',
+          lastAction: 'Mandatory evacuation orders issued -- all zones',
           loopCount: 3,
           confidence: 96,
           processingTime: 2890,
@@ -291,10 +291,10 @@ export function useStormSimulation() {
         break;
 
       case 8:
-        // Storm Watcher: loop update — possible Cat-5 intensification
+        // Storm Watcher: loop update -- possible Cat-5 intensification
         updateAgent('storm-watcher', {
           status: 'active',
-          lastAction: 'Helena strengthening — Cat-5 possible',
+          lastAction: 'Helena strengthening -- Cat-5 possible',
           loopCount: 5,
           confidence: 98,
           processingTime: 4100,
@@ -307,7 +307,7 @@ export function useStormSimulation() {
           landfall: '14-18 hours',
           category: 5
         }));
-        addLog('[Agent-1] Storm Watcher: LOOP UPDATE — Helena may intensify to Cat-5');
+        addLog('[Agent-1] Storm Watcher: LOOP UPDATE -- Helena may intensify to Cat-5');
         addLog('[Agent-4] Alert Commander: Re-evaluating action plan for Cat-5 scenario...');
         break;
     }
@@ -319,7 +319,7 @@ export function useStormSimulation() {
     setIsRunning(true);
     phaseRef.current = 0;
     setSimulationPhase(0);
-    addLog('[SYSTEM] Pipeline activated — Hurricane Helena scenario running');
+    addLog('[SYSTEM] Pipeline activated -- Hurricane Helena scenario running');
 
     intervalRef.current = setInterval(() => {
       if (phaseRef.current < TOTAL_PHASES) {
@@ -349,7 +349,7 @@ export function useStormSimulation() {
     setTotalPopulationAtRisk(0);
     setSystemLog([
       ...INITIAL_LOG,
-      '[SYSTEM] Simulation reset — ready for next run'
+      '[SYSTEM] Simulation reset -- ready for next run'
     ]);
     hasAutoStarted.current = false;
   }, []);
