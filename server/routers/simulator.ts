@@ -208,11 +208,64 @@ export const simulatorRouter = router({
           response_format: { type: "json_object" },
         });
 
-        const content = (llmResponse as { choices: Array<{ message: { content: string } }> })
+        const raw = (llmResponse as { choices: Array<{ message: { content: string } }> })
           .choices?.[0]?.message?.content ?? "{}";
 
-        analysisText = content;
-        analysis = JSON.parse(content) as Record<string, unknown>;
+        analysisText = raw;
+
+        // Robust JSON extraction: strip markdown fences, find outermost {...}
+        let jsonStr = raw.trim();
+        // Remove ```json ... ``` or ``` ... ``` wrappers
+        jsonStr = jsonStr.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+        // Find the first '{' and last '}' to extract the JSON object
+        const firstBrace = jsonStr.indexOf('{');
+        const lastBrace = jsonStr.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          jsonStr = jsonStr.slice(firstBrace, lastBrace + 1);
+        }
+
+        // Attempt parse; on failure try to repair truncated JSON by closing open brackets
+        let parsed: Record<string, unknown>;
+        try {
+          parsed = JSON.parse(jsonStr) as Record<string, unknown>;
+        } catch {
+          // Count unmatched braces/brackets and close them
+          let depth = 0;
+          let inString = false;
+          let escape = false;
+          for (const ch of jsonStr) {
+            if (escape) { escape = false; continue; }
+            if (ch === '\\' && inString) { escape = true; continue; }
+            if (ch === '"') { inString = !inString; continue; }
+            if (inString) continue;
+            if (ch === '{' || ch === '[') depth++;
+            if (ch === '}' || ch === ']') depth--;
+          }
+          let repaired = jsonStr;
+          // Remove trailing comma before closing
+          repaired = repaired.replace(/,\s*$/, '');
+          // Close any open arrays/objects
+          while (depth > 0) { repaired += '}'; depth--; }
+          try {
+            parsed = JSON.parse(repaired) as Record<string, unknown>;
+          } catch {
+            // Last resort: return a minimal valid structure
+            parsed = {
+              summary: 'Analysis partially generated — please retry for full results.',
+              affectedPopulation: 0,
+              threatLevel: 'MODERATE',
+              infrastructureImpacts: {},
+              evacuationZones: { mandatory: [], recommended: [], estimatedEvacuees: 0, timeToEvacuate: 'Unknown' },
+              shelterDemand: { estimatedShelterNeeds: 0, recommendedShelters: [], specialNeedsCount: 0 },
+              stormSurge: { maxSurgeMeters: 0, affectedCoastlineKm: 0, highRiskAreas: [] },
+              economicImpact: { estimatedDamageUSD: 'Unknown', recoveryMonths: 0, details: '' },
+              immediateActions: [],
+              agentRecommendations: {},
+            };
+          }
+        }
+
+        analysis = parsed;
         affectedPopulation = (analysis.affectedPopulation as number) ?? 0;
         status = "complete";
       } catch (err) {

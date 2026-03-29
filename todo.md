@@ -65,3 +65,10 @@
 - [x] Vortex scales with category (Cat 1 small → Cat 5 massive), intensifies over warm water, shrinks on landfall
 - [x] Animation shows storm eye, spiral bands, and intensity color matching category colors
 - [x] Playback controls: play/pause/speed (0.5×/1×/2×/4×) and restart button
+
+## Storm Simulator Map & UI Polish
+- [x] Dark night-mode Google Maps style matching BayShield theme (dark ocean, glowing coastlines)
+- [x] Hurricane vortex canvas overlay rendered directly on the map (travels the drawn track)
+- [x] Intensity trend indicators on track: arrows/badges showing strengthening ↑ or weakening ↓ at each waypoint
+- [x] Redesigned impact analysis panel: cleaner layout, intensity timeline chart, better visual hierarchy
+- [x] Fix LLM JSON parse error: robust extraction strips markdown fences and repairs truncated JSON
