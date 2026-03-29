@@ -18,6 +18,7 @@ import {
   Radio,
   RotateCcw,
   ChevronLeft,
+  Wind,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +29,7 @@ const NAV_ITEMS = [
   { path: '/map',            label: 'Map & Evacuation', icon: Map },
   { path: '/resources',      label: 'Resources',       icon: Package },
   { path: '/system',         label: 'System Monitor',  icon: Activity },
+  { path: '/simulator',       label: 'Sim Studio',      icon: Wind },
 ];
 
 const THREAT_STYLES: Record<string, { label: string; dotClass: string; textClass: string; bgClass: string }> = {

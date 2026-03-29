@@ -31,3 +31,29 @@
 - [x] Add SSE streaming endpoint from backend to frontend for live agent state updates (/api/pipeline/stream + /api/system/health-stream)
 - [x] Frontend: consume backend SSE for live agent states (usePipelineStream + useSystemHealth hooks)
 - [x] System Monitoring page showing all service health (frontend, backend, Python ADK, LLM, shelter feed, routing)
+
+## Bug Fixes
+- [x] Fix SSE pipeline stream — Python ADK service was not running; added auto-start via concurrently in dev script
+
+## Real-Time Shelter Feed
+- [ ] Research real-time Florida/Tampa Bay shelter capacity APIs (FEMA, FL Division of Emergency Management, ARC, OpenFEMA)
+- [ ] Build shelter feed tool in Python ADK (real-time capacity + spaces remaining)
+- [ ] Add tRPC shelter procedure to Node.js backend
+- [ ] Wire shelter data into Resources page (live capacity bars, spaces remaining)
+- [ ] Update System Monitor shelter_feed status from ESTIMATED to live ONLINE
+
+## Shelter Estimation Transparency
+- [ ] Update System Monitor shelter card to explain estimation methodology (FEMA SESP baseline + storm severity + population density)
+- [ ] Update Resources page shelter cards to show estimation basis and data sources
+
+## Hurricane Simulation Studio
+- [x] Add storm_simulations table to Drizzle schema
+- [x] Build tRPC simulateStorm procedure with LLM infrastructure impact analysis
+- [x] Build tRPC getSimulations / getSimulation procedures for history
+- [x] Create StormSimulator page with Google Maps track drawing (polyline + markers)
+- [x] Storm parameter panel: name, type (hurricane/tropical storm/tornado/flood), category 1-5, wind speed, radius, forward speed
+- [x] LLM analysis: infrastructure damage predictions, affected population, evacuation zones, power grid impact, road closures, shelter demand surge
+- [x] Results panel: streaming LLM output with structured sections (infrastructure, population, resources, recommendations)
+- [x] Affected area overlay: draw wind radius circles on map colored by damage zone (catastrophic/major/moderate/minor)
+- [x] Add Storm Simulator nav item to DashboardLayout sidebar
+- [x] Write vitest tests for simulateStorm procedure

@@ -2,6 +2,8 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import path from "path";
+import { spawn, type ChildProcess } from "child_process";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
@@ -29,9 +31,84 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
+// ── Python ADK Service auto-start ───────────────────────────────────────────
+// Spawns the Python ADK FastAPI service as a child process so it starts
+// automatically alongside the Node.js server regardless of how dev is launched.
+function startPythonADK(): ChildProcess | null {
+  // Resolve the python-agents directory relative to the project root
+  const adkDir = path.resolve(process.cwd(), "python-agents");
+  const adkScript = path.join(adkDir, "server.py");
+
+  // Check if already running on port 8000 by attempting a quick connect
+  const child = spawn("python3", [adkScript], {
+    cwd: adkDir,
+    stdio: ["ignore", "pipe", "pipe"],
+    detached: false,
+  });
+
+  child.stdout?.on("data", (data: Buffer) => {
+    const line = data.toString().trim();
+    if (line) console.log(`[ADK] ${line}`);
+  });
+  child.stderr?.on("data", (data: Buffer) => {
+    const line = data.toString().trim();
+    // Suppress uvicorn INFO lines to reduce noise; log warnings/errors
+    if (line && !line.startsWith("INFO:")) console.error(`[ADK] ${line}`);
+  });
+  child.on("error", (err) => {
+    console.error(`[ADK] Failed to start Python ADK service: ${err.message}`);
+  });
+  child.on("exit", (code, signal) => {
+    if (code !== 0 && signal !== "SIGTERM") {
+      console.warn(`[ADK] Python ADK service exited (code=${code}, signal=${signal})`);
+    }
+  });
+
+  // Ensure child is killed when Node.js exits
+  process.on("exit", () => { try { child.kill("SIGTERM"); } catch { /* ignore */ } });
+  process.on("SIGINT",  () => { try { child.kill("SIGTERM"); } catch { /* ignore */ } process.exit(0); });
+  process.on("SIGTERM", () => { try { child.kill("SIGTERM"); } catch { /* ignore */ } process.exit(0); });
+
+  console.log(`[ADK] Python ADK service starting (pid=${child.pid})…`);
+  return child;
+}
+
+async function waitForADK(url: string, maxWaitMs = 15_000): Promise<boolean> {
+  const deadline = Date.now() + maxWaitMs;
+  while (Date.now() < deadline) {
+    try {
+      const res = await fetch(`${url}/health`, { signal: AbortSignal.timeout(1000) });
+      if (res.ok) return true;
+    } catch { /* not ready yet */ }
+    await new Promise(r => setTimeout(r, 500));
+  }
+  return false;
+}
+
 async function startServer() {
   const app = express();
   const server = createServer(app);
+
+  // Start Python ADK service (non-blocking — Node.js server starts regardless)
+  const adkAlreadyRunning = await (async () => {
+    try {
+      const r = await fetch(`${PYTHON_ADK_URL}/health`, { signal: AbortSignal.timeout(1000) });
+      return r.ok;
+    } catch { return false; }
+  })();
+
+  if (!adkAlreadyRunning) {
+    startPythonADK();
+    // Wait up to 15 s for ADK to be ready before accepting traffic
+    const ready = await waitForADK(PYTHON_ADK_URL);
+    if (ready) {
+      console.log("[ADK] Python ADK service is ready.");
+    } else {
+      console.warn("[ADK] Python ADK service did not become ready in time — stream endpoints will return errors until it starts.");
+    }
+  } else {
+    console.log("[ADK] Python ADK service already running — skipping spawn.");
+  }
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));

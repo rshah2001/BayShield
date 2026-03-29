@@ -12,6 +12,7 @@ import Infrastructure from "./pages/Infrastructure";
 import MapViewPage from "./pages/MapView";
 import Resources from "./pages/Resources";
 import SystemMonitor from "./pages/SystemMonitor";
+import StormSimulator from "./pages/StormSimulator";
 import DashboardLayout from "./components/DashboardLayout";
 
 function DashboardRoutes() {
@@ -24,6 +25,7 @@ function DashboardRoutes() {
         <Route path="/map"            component={MapViewPage} />
         <Route path="/resources"      component={Resources} />
         <Route path="/system"          component={SystemMonitor} />
+        <Route path="/simulator"       component={StormSimulator} />
         <Route component={NotFound} />
       </Switch>
     </DashboardLayout>
@@ -40,6 +42,7 @@ function Router() {
       <Route path="/map"            component={DashboardRoutes} />
       <Route path="/resources"      component={DashboardRoutes} />
       <Route path="/system"          component={DashboardRoutes} />
+      <Route path="/simulator"       component={DashboardRoutes} />
       <Route path="/404"            component={NotFound} />
       <Route component={NotFound} />
     </Switch>

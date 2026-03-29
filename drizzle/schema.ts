@@ -138,3 +138,30 @@ export const shelterStatus = mysqlTable("shelter_status", {
 
 export type ShelterStatusRecord = typeof shelterStatus.$inferSelect;
 export type InsertShelterStatus = typeof shelterStatus.$inferInsert;
+
+/**
+ * Hurricane / storm simulations created by users via the Simulation Studio.
+ * Each record stores the full track, parameters, and LLM-generated analysis.
+ */
+export const stormSimulations = mysqlTable("storm_simulations", {
+  id: int("id").autoincrement().primaryKey(),
+  simId: varchar("simId", { length: 64 }).notNull().unique(),
+  name: varchar("name", { length: 128 }).notNull(),
+  stormType: mysqlEnum("stormType", ["hurricane", "tropical_storm", "tropical_depression", "tornado", "flood", "nor_easter"]).default("hurricane").notNull(),
+  category: int("category").default(1),            // Saffir-Simpson 1-5 (null for non-hurricanes)
+  windSpeedKph: int("windSpeedKph").default(150),
+  radiusKm: int("radiusKm").default(80),            // radius of maximum winds
+  forwardSpeedKph: int("forwardSpeedKph").default(20),
+  track: json("track").notNull(),                   // Array of {lat, lng, timestamp?} waypoints
+  landfall: json("landfall"),                       // {lat, lng} of projected landfall point
+  // LLM-generated analysis (stored as structured JSON)
+  analysis: json("analysis"),                       // full structured impact analysis
+  analysisText: text("analysisText"),               // raw markdown from LLM
+  affectedPopulation: int("affectedPopulation").default(0),
+  status: mysqlEnum("status", ["pending", "analyzing", "complete", "error"]).default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type StormSimulation = typeof stormSimulations.$inferSelect;
+export type InsertStormSimulation = typeof stormSimulations.$inferInsert;
