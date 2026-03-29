@@ -28,19 +28,20 @@ const FEATURES = [
 
 export default function Landing() {
   return (
-    <div className="min-h-screen" style={{ background: '#080f1a', fontFamily: 'Inter, system-ui, sans-serif' }}>
+    <div className="min-h-screen" style={{ background: 'transparent', fontFamily: 'Inter, system-ui, sans-serif' }}>
 
       {/* ===== HERO ===== */}
       <section className="relative min-h-screen flex flex-col">
         <div className="absolute inset-0 overflow-hidden">
           <img src={HERO_BG} alt="" className="w-full h-full object-cover" style={{ opacity: 0.45 }} />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(8,15,26,0.25), rgba(8,15,26,0.05) 35%, rgba(8,15,26,0.75) 75%, #080f1a)' }} />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, rgba(8,15,26,0.65), transparent 55%)' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, rgba(8,15,26,0.82), rgba(8,15,26,0.42) 42%, rgba(8,15,26,0.16) 66%, rgba(8,15,26,0.72))' }} />
+          <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 70% 45%, rgba(56,189,248,0.12), transparent 26%)' }} />
           <ParticleCanvas />
         </div>
 
         {/* Nav */}
-        <nav className="relative z-20 mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 px-4 py-5 sm:px-6">
+        <nav className="relative z-20 mx-auto mt-4 flex w-[calc(100%-1.5rem)] max-w-[1360px] items-center justify-between gap-3 rounded-[28px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.03)),rgba(10,18,34,0.44)] px-4 py-3 shadow-[0_20px_60px_rgba(2,6,23,0.28),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-2xl sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(96,165,250,0.25), rgba(56,189,248,0.15))', border: '1px solid rgba(96,165,250,0.35)' }}>
               <Shield className="w-4 h-4" style={{ color: '#60a5fa' }} />
@@ -50,11 +51,11 @@ export default function Landing() {
             </span>
             <span className="text-[11px] font-mono px-1.5 py-0.5 rounded" style={{ background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.2)', color: '#60a5fa' }}>v3.0</span>
           </div>
-          <div className="flex items-center gap-3 sm:gap-4">
-            <a href="#architecture" className="text-sm hidden md:block" style={{ color: '#94a3b8' }}>Architecture</a>
-            <a href="#features" className="text-sm hidden md:block" style={{ color: '#94a3b8' }}>Features</a>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <a href="#architecture" className="hidden rounded-full border border-transparent px-3 py-1.5 text-sm text-slate-300/90 transition-all hover:border-white/10 hover:bg-white/6 hover:text-white md:block">Architecture</a>
+            <a href="#features" className="hidden rounded-full border border-transparent px-3 py-1.5 text-sm text-slate-300/90 transition-all hover:border-white/10 hover:bg-white/6 hover:text-white md:block">Features</a>
             <Link href="/dashboard">
-              <span className="flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium sm:px-4" style={{ background: 'rgba(96,165,250,0.15)', border: '1px solid rgba(96,165,250,0.3)', color: '#93c5fd' }}>
+              <span className="flex cursor-pointer items-center gap-1.5 rounded-full border border-cyan-300/22 bg-[linear-gradient(180deg,rgba(96,165,250,0.24),rgba(56,189,248,0.12))] px-3 py-2 text-sm font-medium text-sky-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_10px_24px_rgba(14,165,233,0.16)] transition-all hover:border-cyan-200/30 hover:bg-[linear-gradient(180deg,rgba(96,165,250,0.28),rgba(56,189,248,0.16))] sm:px-4">
                 <span className="hidden sm:inline">Dashboard</span>
                 <span className="sm:hidden">Open</span>
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -103,7 +104,7 @@ export default function Landing() {
       </section>
 
       {/* ===== ARCHITECTURE ===== */}
-      <section id="architecture" className="py-24" style={{ background: '#080f1a' }}>
+      <section id="architecture" className="py-24" style={{ background: 'rgba(8,15,26,0.62)' }}>
         <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
           <div className="mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono mb-4" style={{ background: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.2)', color: '#a78bfa' }}>AGENT ARCHITECTURE</div>
@@ -201,7 +202,7 @@ export default function Landing() {
       </section>
 
       {/* ===== FEATURES ===== */}
-      <section id="features" className="py-24" style={{ background: '#060d18' }}>
+      <section id="features" className="py-24" style={{ background: 'rgba(6,13,24,0.64)' }}>
         <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
           <div className="mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono mb-4" style={{ background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)', color: '#34d399' }}>CAPABILITIES</div>
@@ -227,7 +228,7 @@ export default function Landing() {
       </section>
 
       {/* ===== CTA ===== */}
-      <section className="py-24" style={{ background: '#080f1a' }}>
+      <section className="py-24" style={{ background: 'rgba(8,15,26,0.62)' }}>
         <div className="mx-auto max-w-[1400px] px-4 text-center sm:px-6">
           <h2 className="text-3xl font-semibold mb-4" style={{ color: '#f1f5f9' }}>Ready to Coordinate?</h2>
           <p className="text-base mb-8 mx-auto" style={{ color: '#64748b', maxWidth: '480px' }}>Enter the command center and run the full Hurricane Helena simulation across all 9 phases.</p>
@@ -240,7 +241,7 @@ export default function Landing() {
       </section>
 
       {/* ===== FOOTER ===== */}
-      <footer className="py-6" style={{ background: '#080f1a', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <footer className="py-6" style={{ background: 'rgba(8,15,26,0.78)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="mx-auto flex max-w-[1400px] flex-col items-center justify-between gap-3 px-4 md:flex-row sm:px-6">
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-blue-400" />

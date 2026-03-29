@@ -14,6 +14,7 @@ import Resources from "./pages/Resources";
 import SystemMonitor from "./pages/SystemMonitor";
 import StormSimulator from "./pages/StormSimulator";
 import DashboardLayout from "./components/DashboardLayout";
+import GlobalEarthBackdrop from "./components/GlobalEarthBackdrop";
 
 function DashboardRoutes() {
   return (
@@ -55,8 +56,13 @@ function App() {
       <ThemeProvider defaultTheme="dark">
         <SimulationProvider>
           <TooltipProvider>
-            <Toaster />
-            <Router />
+            <div className="relative min-h-screen overflow-x-hidden bg-background">
+              <GlobalEarthBackdrop />
+              <div className="relative z-10">
+                <Toaster />
+                <Router />
+              </div>
+            </div>
           </TooltipProvider>
         </SimulationProvider>
       </ThemeProvider>

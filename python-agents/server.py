@@ -14,11 +14,18 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from dotenv import load_dotenv
 
 # Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(__file__))
+BASE_DIR = os.path.dirname(__file__)
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+sys.path.insert(0, BASE_DIR)
+
+load_dotenv(os.path.join(PROJECT_ROOT, ".env.local"), override=False)
+load_dotenv(os.path.join(PROJECT_ROOT, ".env"), override=False)
 
 from orchestration.pipeline import run_pipeline, stream_pipeline
+from sdk.llm_client import sdk_status
 from tools.noaa_tools import (
     fetch_ktpa_observations, fetch_nws_alerts,
     fetch_nhc_active_storms, compute_threat_level
@@ -44,6 +51,7 @@ class PipelineRequest(BaseModel):
 
 @app.get("/health")
 async def health():
+    llm = sdk_status()
     return {
         "status": "ok",
         "service": "BayShield ADK Agent Service",
@@ -54,7 +62,8 @@ async def health():
             "vulnerability-mapper (ParallelAgent)",
             "resource-coordinator (ParallelAgent)",
             "alert-commander (SelfCorrectingLoopAgent)"
-        ]
+        ],
+        "llm_sdk": llm,
     }
 
 
@@ -122,6 +131,7 @@ async def run_full_pipeline(req: PipelineRequest):
                     "route": p.route,
                     "population": p.population,
                     "rationale": p.rationale,
+                    "llm_explanation": p.llm_explanation,
                     "output_type": p.output_type.value,
                     "correction_applied": p.correction_applied,
                 }
@@ -135,6 +145,7 @@ async def run_full_pipeline(req: PipelineRequest):
                     "confidence": t.confidence,
                     "loop_iteration": t.loop_iteration,
                     "output_type": t.output_type.value,
+                    "llm_narrative": t.llm_narrative,
                     "deterministic_rationale": t.deterministic_rationale,
                     "execution_ms": t.execution_ms,
                 }

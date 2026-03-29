@@ -13,7 +13,7 @@ import {
   Zap, AlertTriangle, Users, Building2, Car, Waves, DollarSign,
   Radio, Droplets, Plane, Ship, Hospital, Clock,
   CheckCircle2, Loader2, History, X, Wind, Square,
-  TrendingUp, TrendingDown, Minus, ArrowRight, Settings,
+  TrendingUp, TrendingDown, Minus, ArrowRight, Settings, Pause,
 } from 'lucide-react';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -553,6 +553,9 @@ export default function StormSimulator() {
   const [showHistory, setShowHistory] = useState(false);
   const [selectedSimId, setSelectedSimId] = useState<string | null>(null);
   const [overlayActive, setOverlayActive] = useState(true);
+  const [overlayPaused, setOverlayPaused] = useState(false);
+  const [overlaySpeed, setOverlaySpeed] = useState(1);
+  const [overlayRunKey, setOverlayRunKey] = useState(0);
   const [mobileTab, setMobileTab] = useState<MobileTab | null>(null);
 
   const createSim = trpc.simulator.create.useMutation();
@@ -562,6 +565,10 @@ export default function StormSimulator() {
     { enabled: !!selectedSimId }
   );
   const deleteSim = trpc.simulator.delete.useMutation({ onSuccess: () => refetchHistory() });
+  const cycleOverlaySpeed = useCallback(() => {
+    const options = [0.5, 1, 1.5, 2];
+    setOverlaySpeed(prev => options[(options.indexOf(prev) + 1) % options.length]);
+  }, []);
 
   const trackColor = useCallback(() => {
     if (params.stormType === 'hurricane') return CAT_COLORS[params.category]?.track ?? '#ef4444';
@@ -705,6 +712,8 @@ export default function StormSimulator() {
     setSimStatus('analyzing');
     setAnalysis(null);
     setSelectedSimId(null);
+    setOverlayPaused(false);
+    setOverlayRunKey(v => v + 1);
     setMobileTab('analysis'); // show analysis on mobile
     try {
       const result = await createSim.mutateAsync({
@@ -733,6 +742,8 @@ export default function StormSimulator() {
     if (!selectedSim || !mapRef.current) return;
     const pts = selectedSim.track as TrackPoint[];
     setTrack(pts);
+    setOverlayPaused(false);
+    setOverlayRunKey(v => v + 1);
     renderTrack(pts);
     setAnalysis(selectedSim.analysis as Record<string, unknown> | null);
     setSimStatus(selectedSim.status === 'complete' ? 'complete' : 'idle');
@@ -794,6 +805,9 @@ export default function StormSimulator() {
           windSpeedKph={params.windSpeedKph}
           radiusKm={params.radiusKm}
           isActive={overlayActive && track.length >= 1}
+          isPaused={overlayPaused}
+          movementSpeed={overlaySpeed}
+          resetKey={overlayRunKey}
         />
 
         {/* Drawing banner */}
@@ -818,17 +832,40 @@ export default function StormSimulator() {
         )}
 
         {/* Overlay toggle */}
-        <button
-          onClick={() => setOverlayActive(v => !v)}
-          className={cn(
-            'absolute bottom-16 lg:bottom-4 right-3 flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-xl border backdrop-blur-sm transition-all z-10',
-            overlayActive
-              ? 'bg-cyan-400/15 border-cyan-400/25 text-cyan-400'
-              : 'bg-black/50 border-white/[0.08] text-white/40 hover:text-white/70'
-          )}
-        >
-          🌀 {overlayActive ? 'Hide Vortex' : 'Show Vortex'}
-        </button>
+        <div className="absolute bottom-16 lg:bottom-4 right-3 flex items-center gap-2 z-10">
+          <button
+            onClick={cycleOverlaySpeed}
+            className="flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-xl border backdrop-blur-sm transition-all bg-black/55 border-white/[0.08] text-white/75 hover:text-cyan-300"
+          >
+            <Wind className="w-3.5 h-3.5" />
+            {overlaySpeed.toFixed(1)}x
+          </button>
+          <button
+            onClick={() => setOverlayPaused(v => !v)}
+            disabled={!overlayActive || track.length < 2}
+            className={cn(
+              'flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-xl border backdrop-blur-sm transition-all',
+              overlayPaused
+                ? 'bg-amber-400/15 border-amber-400/25 text-amber-300'
+                : 'bg-black/55 border-white/[0.08] text-white/75 hover:text-cyan-300',
+              (!overlayActive || track.length < 2) && 'opacity-40 cursor-not-allowed'
+            )}
+          >
+            {overlayPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+            {overlayPaused ? 'Resume' : 'Pause'}
+          </button>
+          <button
+            onClick={() => setOverlayActive(v => !v)}
+            className={cn(
+              'flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-xl border backdrop-blur-sm transition-all',
+              overlayActive
+                ? 'bg-cyan-400/15 border-cyan-400/25 text-cyan-400'
+                : 'bg-black/50 border-white/[0.08] text-white/40 hover:text-white/70'
+            )}
+          >
+            🌀 {overlayActive ? 'Hide Vortex' : 'Show Vortex'}
+          </button>
+        </div>
       </div>
 
       {/* ── Desktop Right: Analysis panel ── */}

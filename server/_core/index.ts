@@ -1,14 +1,19 @@
-import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
 import path from "path";
 import { spawn, type ChildProcess } from "child_process";
+import dotenv from "dotenv";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { ENV } from "./env";
 import { serveStatic, setupVite } from "./vite";
+
+const projectRoot = process.cwd();
+dotenv.config({ path: path.resolve(projectRoot, ".env.local"), override: false });
+dotenv.config({ path: path.resolve(projectRoot, ".env"), override: false });
 
 const PYTHON_ADK_URL = process.env.PYTHON_ADK_URL || "http://localhost:8000";
 
@@ -38,12 +43,20 @@ function startPythonADK(): ChildProcess | null {
   // Resolve the python-agents directory relative to the project root
   const adkDir = path.resolve(process.cwd(), "python-agents");
   const adkScript = path.join(adkDir, "server.py");
+  const pythonCommand =
+    process.platform === "win32"
+      ? { command: "py", args: ["-3", adkScript] }
+      : { command: "python3", args: [adkScript] };
 
   // Check if already running on port 8000 by attempting a quick connect
-  const child = spawn("python3", [adkScript], {
+  const child = spawn(pythonCommand.command, pythonCommand.args, {
     cwd: adkDir,
     stdio: ["ignore", "pipe", "pipe"],
     detached: false,
+    env: {
+      ...process.env,
+      PYTHONUNBUFFERED: "1",
+    },
   });
 
   child.stdout?.on("data", (data: Buffer) => {
@@ -222,16 +235,17 @@ async function startServer() {
         if (noaaRes.ok) noaaStatus = "online";
       } catch { /* offline */ }
 
-      // Check LLM API health (use BUILT_IN_FORGE_API_URL env)
+      // Check LLM API health using the same env resolution as the LLM client.
       let llmStatus: "online" | "offline" = "offline";
-      const llmUrl = process.env.BUILT_IN_FORGE_API_URL;
+      const llmUrl = ENV.forgeApiUrl;
+      if (ENV.forgeApiKey) {
+        llmStatus = "online";
+      }
       if (llmUrl) {
         try {
           const llmRes = await fetch(`${llmUrl}/health`, { signal: AbortSignal.timeout(3000) });
           if (llmRes.ok || llmRes.status === 404) llmStatus = "online"; // 404 = URL valid, no /health route
         } catch { /* offline */ }
-        // If we have the key, assume online (LLM APIs don't always expose /health)
-        if (process.env.BUILT_IN_FORGE_API_KEY) llmStatus = "online";
       }
 
       const health = {

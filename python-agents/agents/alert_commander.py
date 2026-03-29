@@ -13,6 +13,7 @@ from models.types import (
     ActionPlan, AgentMessage, AgentStatus, AgentTrace, MessageEventType,
     OutputType, ShelterResource, ThreatLevel, VulnerabilityZone
 )
+from sdk.llm_client import generate_text, sdk_status
 
 SELF_CORRECTION_MAX = 3
 
@@ -155,6 +156,62 @@ def _generate_action_plans(
     return plans
 
 
+async def _generate_plan_explanation(
+    plan: ActionPlan,
+    threat_level: ThreatLevel,
+    correction_details: Optional[str],
+) -> Optional[str]:
+    correction_context = (
+        f"Self-correction notes: {correction_details}."
+        if correction_details
+        else "No self-correction was required."
+    )
+
+    return await generate_text(
+        (
+            "Write a single-sentence emergency-operations explanation for this action plan. "
+            "Keep it specific, calm, and under 35 words.\n"
+            f"Threat level: {threat_level.value}\n"
+            f"Title: {plan.title}\n"
+            f"Action: {plan.action}\n"
+            f"Population: {plan.population}\n"
+            f"Shelter: {plan.shelter}\n"
+            f"Rationale: {plan.rationale}\n"
+            f"{correction_context}"
+        ),
+        system_instruction=(
+            "You are BayShield's emergency planning copilot. "
+            "Produce concise operational explanations for incident commanders."
+        ),
+        temperature=0.15,
+    )
+
+
+async def _generate_trace_narrative(
+    threat_level: ThreatLevel,
+    action_plans: list[ActionPlan],
+    correction_applied: bool,
+    correction_details: Optional[str],
+) -> Optional[str]:
+    plan_titles = ", ".join(plan.title for plan in action_plans[:4]) or "No action plans"
+    correction_context = correction_details or "None"
+    return await generate_text(
+        (
+            "Summarize this emergency planning run in 2 short sentences for an operations log.\n"
+            f"Threat level: {threat_level.value}\n"
+            f"Plans issued: {len(action_plans)}\n"
+            f"Top plans: {plan_titles}\n"
+            f"Self-correction applied: {correction_applied}\n"
+            f"Correction details: {correction_context}"
+        ),
+        system_instruction=(
+            "You are BayShield's emergency operations narrator. "
+            "Write concise, factual summaries for incident logs."
+        ),
+        temperature=0.2,
+    )
+
+
 class AlertCommanderAgent:
     """
     SelfCorrectingLoopAgent — generates action plans, validates them,
@@ -193,6 +250,7 @@ class AlertCommanderAgent:
         action_plans: list[ActionPlan] = []
         correction_applied = False
         correction_details: Optional[str] = None
+        llm_narrative: Optional[str] = None
         loop_iteration = 0
 
         for iteration in range(1, SELF_CORRECTION_MAX + 1):
@@ -235,6 +293,37 @@ class AlertCommanderAgent:
                 )
                 await asyncio.sleep(0.02)
 
+        llm_status = sdk_status()
+        if llm_status["enabled"]:
+            for plan in action_plans:
+                explanation = await _generate_plan_explanation(
+                    plan, threat_level, correction_details
+                )
+                if explanation:
+                    plan.llm_explanation = explanation
+                    plan.output_type = OutputType.HYBRID
+
+            llm_narrative = await _generate_trace_narrative(
+                threat_level,
+                action_plans,
+                correction_applied,
+                correction_details,
+            )
+
+            if llm_narrative:
+                self._emit(
+                    to="orchestrator",
+                    event_type=MessageEventType.RESPONSE,
+                    content="Gemini SDK generated operational narratives for the action plan set.",
+                    payload={
+                        "provider": llm_status["provider"],
+                        "model": llm_status["model"],
+                        "plans_enriched": len(
+                            [plan for plan in action_plans if plan.llm_explanation]
+                        ),
+                    },
+                )
+
         # Final broadcast
         high_priority_zones = [z.name for z in zones if z.risk_score >= 65]
         total_at_risk = sum(p.population for p in action_plans if p.population > 0)
@@ -275,8 +364,12 @@ class AlertCommanderAgent:
                 "correction_applied": correction_applied,
                 "correction_details": correction_details,
             },
-            output_type=OutputType.DETERMINISTIC,
-            llm_narrative=None,
+            output_type=(
+                OutputType.HYBRID
+                if llm_narrative or any(plan.llm_explanation for plan in action_plans)
+                else OutputType.DETERMINISTIC
+            ),
+            llm_narrative=llm_narrative,
             deterministic_rationale=(
                 f"Action plans generated from zone risk scores and shelter capacity. "
                 f"Self-correction loop ran {loop_iteration} iteration(s). "
