@@ -13,6 +13,7 @@ import {
   Building2,
   Map,
   Package,
+  Activity,
   Shield,
   Radio,
   RotateCcw,
@@ -26,6 +27,7 @@ const NAV_ITEMS = [
   { path: '/infrastructure', label: 'Infrastructure',  icon: Building2 },
   { path: '/map',            label: 'Map & Evacuation', icon: Map },
   { path: '/resources',      label: 'Resources',       icon: Package },
+  { path: '/system',         label: 'System Monitor',  icon: Activity },
 ];
 
 const THREAT_STYLES: Record<string, { label: string; dotClass: string; textClass: string; bgClass: string }> = {

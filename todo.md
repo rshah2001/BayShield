@@ -28,6 +28,6 @@
 - [x] Write vitest tests for bayshield router (14 tests passing)
 
 ## Remaining / Future Work
-- [ ] Add SSE streaming endpoint from backend to frontend for live agent state updates
-- [ ] Frontend: consume backend SSE for live agent states replacing frontend hooks
-- [ ] System Monitoring page showing all service health (frontend, backend, Python ADK, LLM, shelter feed, routing)
+- [x] Add SSE streaming endpoint from backend to frontend for live agent state updates (/api/pipeline/stream + /api/system/health-stream)
+- [x] Frontend: consume backend SSE for live agent states (usePipelineStream + useSystemHealth hooks)
+- [x] System Monitoring page showing all service health (frontend, backend, Python ADK, LLM, shelter feed, routing)

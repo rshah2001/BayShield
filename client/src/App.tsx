@@ -11,6 +11,7 @@ import AgentComms from "./pages/AgentComms";
 import Infrastructure from "./pages/Infrastructure";
 import MapViewPage from "./pages/MapView";
 import Resources from "./pages/Resources";
+import SystemMonitor from "./pages/SystemMonitor";
 import DashboardLayout from "./components/DashboardLayout";
 
 function DashboardRoutes() {
@@ -22,6 +23,7 @@ function DashboardRoutes() {
         <Route path="/infrastructure" component={Infrastructure} />
         <Route path="/map"            component={MapViewPage} />
         <Route path="/resources"      component={Resources} />
+        <Route path="/system"          component={SystemMonitor} />
         <Route component={NotFound} />
       </Switch>
     </DashboardLayout>
@@ -37,6 +39,7 @@ function Router() {
       <Route path="/infrastructure" component={DashboardRoutes} />
       <Route path="/map"            component={DashboardRoutes} />
       <Route path="/resources"      component={DashboardRoutes} />
+      <Route path="/system"          component={DashboardRoutes} />
       <Route path="/404"            component={NotFound} />
       <Route component={NotFound} />
     </Switch>
