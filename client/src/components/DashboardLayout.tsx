@@ -6,6 +6,7 @@ import { ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useSimulation } from '@/contexts/SimulationContext';
 import LiveSyncBadge from '@/components/LiveSyncBadge';
+import LiveTicker from '@/components/LiveTicker';
 import {
   LayoutDashboard,
   MessageSquare,
@@ -186,9 +187,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* ── Main content ── */}
-      <main className="flex-1 overflow-y-auto">
-        {children}
-      </main>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 overflow-y-auto">
+          {children}
+        </main>
+        {/* Ticker bar — pinned to bottom of content area */}
+        <LiveTicker />
+      </div>
     </div>
   );
 }
