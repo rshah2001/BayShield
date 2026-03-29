@@ -1,6 +1,5 @@
 // ============================================================
-// STORMMESH — Data Models, Types & Seed Data
-// Full-stack command center data layer
+// BAYSHIELD — Data Models, Types & Seed Data
 // ============================================================
 
 export type ThreatLevel = 'monitoring' | 'advisory' | 'warning' | 'critical';
@@ -63,6 +62,8 @@ export interface AgentMessage {
   to: string;
   timestamp: Date;
   type: 'data' | 'request' | 'response' | 'alert';
+  eventType: string;
+  payload: string;
   content: string;
   status: 'sent' | 'received' | 'processing' | 'acknowledged';
 }
@@ -133,6 +134,21 @@ export const RESOURCES: Resource[] = [
   { id: 'res-7', type: 'evacuation_route', name: 'I-4 East Contraflow', capacity: 99999, currentOccupancy: 0, status: 'available', lat: 27.9506, lng: -82.3012 }
 ];
 
+// Alias for new simulation engine
+export const INITIAL_WEATHER_STATE: WeatherData = {
+  stormName: 'Hurricane Helena',
+  category: 4,
+  windSpeed: 145,
+  pressure: 942,
+  lat: 25.2,
+  lng: -84.1,
+  movement: 'NNW at 14 mph',
+  landfall: '18-22 hours',
+  threatLevel: 'monitoring',
+  radarReturns: 87,
+  surgeHeight: 12
+};
+
 export const INITIAL_WEATHER: WeatherData = {
   stormName: 'Hurricane Helena',
   category: 4,
@@ -148,15 +164,15 @@ export const INITIAL_WEATHER: WeatherData = {
 };
 
 export const AGENT_MESSAGES_SEQUENCE: Omit<AgentMessage, 'id' | 'timestamp'>[] = [
-  { from: 'Storm Watcher', to: 'System', type: 'alert', content: 'NOAA NHC update: Hurricane Helena Cat-4, 145kt winds. Projected landfall Tampa Bay in 18-22hrs. Initiating threat cascade...', status: 'sent' },
-  { from: 'Storm Watcher', to: 'Vulnerability Mapper', type: 'request', content: 'A2A REQUEST: Threat level CRITICAL. Wind field 60mi radius. Surge potential 10-14ft. Begin vulnerability analysis for coastal zones immediately.', status: 'sent' },
-  { from: 'Storm Watcher', to: 'Resource Coordinator', type: 'request', content: 'A2A REQUEST: Parallel activation. Surge zones A/AE/VE require immediate resource pre-positioning. Coordinate with Vulnerability Mapper output.', status: 'sent' },
-  { from: 'Vulnerability Mapper', to: 'Storm Watcher', type: 'response', content: 'ANALYSIS COMPLETE: 6 high-risk zones identified. 47,520 residents in surge zones. Critical: 18,400 elderly/mobility-impaired require assisted evacuation.', status: 'received' },
-  { from: 'Resource Coordinator', to: 'Storm Watcher', type: 'response', content: 'LOGISTICS READY: 3 shelters activated (30,000 cap). I-75/I-4 contraflow authorized. FEMA depot pre-staged. 12 medical teams deployed.', status: 'received' },
-  { from: 'Vulnerability Mapper', to: 'Alert Commander', type: 'data', content: 'VULNERABILITY DATA: Pinellas Point (96/100), St. Pete Beach (96/100), Clearwater Beach (93/100), Davis Islands (87/100). Transmitting full dataset...', status: 'sent' },
-  { from: 'Resource Coordinator', to: 'Alert Commander', type: 'data', content: 'RESOURCE MAP: Shelter capacity 30K available. Evacuation routes open. Medical surge capacity confirmed. Transmitting allocation matrix...', status: 'sent' },
-  { from: 'Alert Commander', to: 'System', type: 'alert', content: 'SELF-CORRECTION LOOP: Reviewing action plan... Detected conflict: Zone 3 shelter assignment exceeds capacity. Re-routing 2,400 residents to USF Sun Dome. Plan revised.', status: 'processing' },
-  { from: 'Alert Commander', to: 'All Zones', type: 'alert', content: 'MANDATORY EVACUATION ORDER: Zones A/AE/VE — Pinellas Point, Davis Islands, St. Pete Beach, Clearwater Beach. Depart NOW via I-75N or I-4E. Shelters open.', status: 'sent' }
+  { from: 'Storm Watcher', to: 'System', type: 'alert', eventType: 'THREAT_DETECTED', payload: '{"storm":"Helena","category":4,"windSpeed":145}', content: 'NOAA NHC update: Hurricane Helena Cat-4, 145kt winds. Projected landfall Tampa Bay in 18-22hrs. Initiating threat cascade...', status: 'sent' },
+  { from: 'Storm Watcher', to: 'Vulnerability Mapper', type: 'request', eventType: 'ANALYZE_VULNERABILITY', payload: '{"threatLevel":"warning","surgeHeight":12}', content: 'A2A REQUEST: Threat level WARNING. Wind field 60mi radius. Surge potential 10-14ft. Begin vulnerability analysis for coastal zones immediately.', status: 'sent' },
+  { from: 'Storm Watcher', to: 'Resource Coordinator', type: 'request', eventType: 'INVENTORY_RESOURCES', payload: '{"estimatedEvacuees":50000,"threatLevel":"warning"}', content: 'A2A REQUEST: Parallel activation. Surge zones A/AE/VE require immediate resource pre-positioning. Coordinate with Vulnerability Mapper output.', status: 'sent' },
+  { from: 'Vulnerability Mapper', to: 'Alert Commander', type: 'data', eventType: 'VULNERABILITY_ANALYSIS_COMPLETE', payload: '{"zonesAtRisk":6,"populationAtRisk":47520}', content: 'ANALYSIS COMPLETE: 6 high-risk zones identified. 47,520 residents in surge zones. Critical: 18,400 elderly/mobility-impaired require assisted evacuation.', status: 'received' },
+  { from: 'Resource Coordinator', to: 'Alert Commander', type: 'data', eventType: 'RESOURCE_INVENTORY_COMPLETE', payload: '{"totalShelterCapacity":30000,"availableCapacity":13400}', content: 'LOGISTICS READY: 3 shelters activated (30,000 cap). I-75/I-4 contraflow authorized. FEMA depot pre-staged. 12 medical teams deployed.', status: 'received' },
+  { from: 'Vulnerability Mapper', to: 'Alert Commander', type: 'data', eventType: 'VULNERABILITY_DATASET', payload: '{"zones":["Pinellas Point","St. Pete Beach","Clearwater Beach","Davis Islands"]}', content: 'VULNERABILITY DATA: Pinellas Point (96/100), St. Pete Beach (96/100), Clearwater Beach (93/100), Davis Islands (87/100). Transmitting full dataset...', status: 'sent' },
+  { from: 'Resource Coordinator', to: 'Alert Commander', type: 'data', eventType: 'RESOURCE_ALLOCATION_MATRIX', payload: '{"sheltersActive":3,"routesOpen":2,"medicalTeams":12}', content: 'RESOURCE MAP: Shelter capacity 30K available. Evacuation routes open. Medical surge capacity confirmed. Transmitting allocation matrix...', status: 'sent' },
+  { from: 'Alert Commander', to: 'System', type: 'alert', eventType: 'SELF_CORRECTION_LOOP', payload: '{"conflictsFound":2,"planVersion":2,"confidence":96}', content: 'SELF-CORRECTION LOOP: Reviewing action plan... Detected conflict: Zone 3 shelter assignment exceeds capacity. Re-routing 2,400 residents to USF Sun Dome. Plan revised.', status: 'processing' },
+  { from: 'Alert Commander', to: 'All Zones', type: 'alert', eventType: 'MANDATORY_EVACUATION_ISSUED', payload: '{"zones":["VE","AE"],"populationNotified":47520}', content: 'MANDATORY EVACUATION ORDER: Zones A/AE/VE — Pinellas Point, Davis Islands, St. Pete Beach, Clearwater Beach. Depart NOW via I-75N or I-4E. Shelters open.', status: 'sent' }
 ];
 
 export const ALERTS: Alert[] = [

@@ -1,91 +1,243 @@
 // ============================================================
-// STORMMESH — Agent Communications Page
-// Real-time message log, filter by agent, agent flow diagram
+// BAYSHIELD — Agent Communications Page
+// Real-time A2A message bus, event types, payload inspector, pipeline viz
 // ============================================================
-
 import { useState } from 'react';
 import { useSimulation } from '@/contexts/SimulationContext';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Filter, ArrowRight, RotateCcw } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { ArrowRight, MessageSquare, Zap, GitBranch, RotateCcw, CheckCircle2, Filter } from 'lucide-react';
 
-const AGENT_META: Record<string, { color: string; icon: string }> = {
-  'Storm Watcher': { color: '#F59E0B', icon: '🌀' },
-  'Vulnerability Mapper': { color: '#06B6D4', icon: '🗺️' },
-  'Resource Coordinator': { color: '#10B981', icon: '📦' },
-  'Alert Commander': { color: '#EF4444', icon: '🚨' },
-  'System': { color: '#3B82F6', icon: '⚡' },
-  'All Zones': { color: '#8B5CF6', icon: '📢' },
+const MSG_TYPE_STYLES: Record<string, { bg: string; border: string; text: string; barColor: string }> = {
+  alert:    { bg: 'bg-red-400/8',     border: 'border-red-400/20',    text: 'text-red-400',    barColor: '#f87171' },
+  request:  { bg: 'bg-amber-400/8',   border: 'border-amber-400/20',  text: 'text-amber-400',  barColor: '#fbbf24' },
+  data:     { bg: 'bg-emerald-400/8', border: 'border-emerald-400/20',text: 'text-emerald-400',barColor: '#34d399' },
+  response: { bg: 'bg-blue-400/8',    border: 'border-blue-400/20',   text: 'text-blue-400',   barColor: '#60a5fa' },
 };
 
-const TYPE_COLORS: Record<string, string> = {
-  alert: '#EF4444',
-  request: '#F59E0B',
-  response: '#10B981',
-  data: '#06B6D4',
+const AGENT_COLORS: Record<string, string> = {
+  'Storm Watcher': 'text-cyan-400', 'Vulnerability Mapper': 'text-emerald-400',
+  'Resource Coordinator': 'text-amber-400', 'Alert Commander': 'text-red-400',
+  'System': 'text-slate-400', 'All Zones': 'text-purple-400',
 };
+const AGENT_ICONS: Record<string, string> = {
+  'Storm Watcher': '🌀', 'Vulnerability Mapper': '🗺️',
+  'Resource Coordinator': '📦', 'Alert Commander': '🚨',
+  'System': '⚙️', 'All Zones': '📡',
+};
+
+const PIPELINE_STEPS = [
+  { label: 'Storm Watcher',        role: 'LoopAgent',               icon: '🌀', desc: 'Polls NOAA every 30s, escalates severity levels' },
+  { label: 'Vulnerability Mapper', role: 'ParallelAgent',           icon: '🗺️', desc: 'Flood zones + population vulnerability analysis' },
+  { label: 'Resource Coordinator', role: 'ParallelAgent',           icon: '📦', desc: 'Shelters, routes, supply depot inventory' },
+  { label: 'Alert Commander',      role: 'SelfCorrectingLoopAgent', icon: '🚨', desc: 'Generates + self-corrects prioritized action plans' },
+];
+
+function fmtTime(d: Date) {
+  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+}
 
 export default function AgentComms() {
   const { messages, agents, isRunning } = useSimulation();
   const [filterAgent, setFilterAgent] = useState<string>('all');
+  const agentMap = Object.fromEntries(agents.map(a => [a.name, a]));
 
-  const filteredMessages = filterAgent === 'all'
-    ? messages
-    : messages.filter(m => m.from === filterAgent || m.to === filterAgent);
+  const filtered = filterAgent === 'all' ? messages : messages.filter(m => m.from === filterAgent || m.to === filterAgent);
+  const alertCount = messages.filter(m => m.type === 'alert').length;
+  const dataCount  = messages.filter(m => m.type === 'data').length;
+  const selfCorrections = messages.filter(m => m.eventType?.includes('SELF_CORRECTION')).length;
 
   return (
-    <div className="p-6 space-y-6" style={{ fontFamily: "'Outfit', sans-serif" }}>
+    <div className="p-5 space-y-5 min-h-full">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-black" style={{ color: '#F1F5F9' }}>Agent Communications</h1>
-          <p className="text-sm" style={{ color: '#64748B' }}>Real-time A2A message passing between specialist agents</p>
+          <h1 className="text-lg font-semibold">Agent Communications</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Real-time A2A message bus — agent-to-agent protocol</p>
         </div>
-        <div className="flex items-center gap-2">
-          {isRunning && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', color: '#10B981' }}>
-              <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#10B981', animation: 'agentPulse 1s ease-in-out infinite' }} />
-              LIVE
-            </div>
-          )}
-          <span className="text-xs font-mono px-3 py-1.5 rounded-lg" style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', color: '#60A5FA' }}>
-            {messages.length} messages
+        {isRunning && (
+          <span className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-lg">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />LIVE
           </span>
+        )}
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-3">
+        {[
+          { label: 'Total Messages',   value: messages.length, icon: MessageSquare, color: 'text-blue-400',    bg: 'bg-blue-400/10' },
+          { label: 'Alert Events',     value: alertCount,      icon: Zap,           color: 'text-red-400',     bg: 'bg-red-400/10' },
+          { label: 'Data Transfers',   value: dataCount,       icon: GitBranch,     color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
+          { label: 'Self-Corrections', value: selfCorrections, icon: RotateCcw,     color: 'text-amber-400',   bg: 'bg-amber-400/10' },
+        ].map(({ label, value, icon: Icon, color, bg }) => (
+          <div key={label} className="bg-card border border-border/50 rounded-xl p-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1">{label}</p>
+                <p className={cn('text-2xl font-semibold', color)}>{value}</p>
+              </div>
+              <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', bg)}>
+                <Icon className={cn('w-4 h-4', color)} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Pipeline */}
+      <div className="bg-card border border-border/50 rounded-xl p-4">
+        <h2 className="text-sm font-medium mb-4">Agent Pipeline Architecture</h2>
+        <div className="flex items-stretch gap-0">
+          {PIPELINE_STEPS.map((step, i) => {
+            const agent = agentMap[step.label];
+            const isActive = agent?.status !== 'idle';
+            const isParallel = step.role === 'ParallelAgent';
+            const isSelfCorrect = step.role.includes('SelfCorrect');
+            return (
+              <div key={step.label} className="flex items-center flex-1">
+                <div className={cn('flex-1 rounded-xl p-3 border transition-all duration-500',
+                  isActive ? 'bg-primary/8 border-primary/25' : 'bg-background/50 border-border/30'
+                )}>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-lg leading-none">{step.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium leading-tight truncate">{step.label}</p>
+                      <p className={cn('text-[10px] font-mono',
+                        isParallel ? 'text-emerald-400' : isSelfCorrect ? 'text-amber-400' : 'text-blue-400'
+                      )}>{step.role}</p>
+                    </div>
+                    {isActive && <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">{step.desc}</p>
+                  {agent && agent.confidence > 0 && (
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <div className="flex-1 h-0.5 bg-border/40 rounded-full overflow-hidden">
+                        <div className="h-full bg-primary/60 rounded-full transition-all duration-700" style={{ width: `${agent.confidence}%` }} />
+                      </div>
+                      <span className="text-[9px] text-muted-foreground font-mono">{agent.confidence}%</span>
+                    </div>
+                  )}
+                </div>
+                {i < PIPELINE_STEPS.length - 1 && (
+                  <div className="flex flex-col items-center px-1.5">
+                    <ArrowRight className={cn('w-4 h-4', isActive ? 'text-primary' : 'text-border')} />
+                    {i === 1 && <span className="text-[9px] text-emerald-400 font-mono mt-0.5">parallel</span>}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
-        {/* Left: Agent Pipeline Diagram + Filter */}
-        <div className="space-y-5">
-          {/* Agent Pipeline */}
-          <div className="p-5 rounded-xl" style={{ background: 'rgba(10,22,40,0.7)', border: '1px solid rgba(59,130,246,0.12)' }}>
-            <div className="text-xs font-mono font-semibold mb-4" style={{ color: '#475569' }}>AGENT PIPELINE</div>
-            <div className="space-y-3">
-              {agents.map((agent, i) => {
-                const meta = AGENT_META[agent.name] || { color: '#475569', icon: '?' };
+      {/* Message log */}
+      <div className="grid grid-cols-4 gap-4">
+        {/* Sidebar filter */}
+        <div className="space-y-3">
+          <div className="bg-card border border-border/50 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+              <h2 className="text-sm font-medium">Filter</h2>
+            </div>
+            <div className="space-y-1">
+              <button
+                onClick={() => setFilterAgent('all')}
+                className={cn('w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-mono transition-colors',
+                  filterAgent === 'all' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-muted-foreground hover:text-foreground'
+                )}
+              >All Messages ({messages.length})</button>
+              {Object.keys(AGENT_ICONS).filter(n => !['System', 'All Zones'].includes(n)).map(name => {
+                const count = messages.filter(m => m.from === name || m.to === name).length;
                 return (
-                  <div key={agent.id}>
-                    <div
-                      className="p-3 rounded-lg cursor-pointer transition-all"
-                      style={{
-                        background: filterAgent === agent.name ? `${meta.color}15` : 'rgba(0,0,0,0.2)',
-                        border: `1px solid ${filterAgent === agent.name ? `${meta.color}40` : 'rgba(255,255,255,0.04)'}`,
-                      }}
-                      onClick={() => setFilterAgent(filterAgent === agent.name ? 'all' : agent.name)}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm">{meta.icon}</span>
-                        <span className="text-xs font-semibold" style={{ color: '#E2E8F0' }}>{agent.name}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-mono" style={{ color: meta.color }}>{agent.status.toUpperCase()}</span>
-                        <span className="text-xs font-mono" style={{ color: '#334155' }}>Loop {agent.loopCount}</span>
-                      </div>
+                  <button
+                    key={name}
+                    onClick={() => setFilterAgent(filterAgent === name ? 'all' : name)}
+                    className={cn('w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-colors flex items-center gap-1.5',
+                      filterAgent === name ? 'bg-primary/10 text-primary border border-primary/20' : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <span>{AGENT_ICONS[name]}</span>
+                    <span className="truncate flex-1">{name}</span>
+                    <span className="text-[10px] opacity-60">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Type legend */}
+          <div className="bg-card border border-border/50 rounded-xl p-4">
+            <h2 className="text-sm font-medium mb-3">Message Types</h2>
+            <div className="space-y-1.5">
+              {Object.entries(MSG_TYPE_STYLES).map(([type, s]) => (
+                <div key={type} className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full" style={{ background: s.barColor }} />
+                  <span className={cn('text-xs font-mono uppercase', s.text)}>{type}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Message feed */}
+        <div className="col-span-3 bg-card border border-border/50 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-medium">A2A Message Log</h2>
+            <div className="flex items-center gap-2">
+              {filterAgent !== 'all' && (
+                <button onClick={() => setFilterAgent('all')} className="text-[11px] text-primary hover:opacity-80 flex items-center gap-1">
+                  <RotateCcw className="w-3 h-3" /> Clear
+                </button>
+              )}
+              <span className="text-[11px] text-muted-foreground font-mono">{filtered.length} messages</span>
+            </div>
+          </div>
+
+          {filtered.length === 0 ? (
+            <div className="text-center py-16">
+              <MessageSquare className="w-8 h-8 text-muted-foreground/20 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">
+                {isRunning ? 'Waiting for first agent message...' : 'Run the simulation to see A2A messages'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-[calc(100vh-340px)] overflow-y-auto pr-1">
+              {[...filtered].reverse().map((msg, i) => {
+                const ts = MSG_TYPE_STYLES[msg.type] ?? MSG_TYPE_STYLES.data;
+                let parsedPayload: Record<string, unknown> | null = null;
+                try { parsedPayload = JSON.parse(msg.payload ?? '{}'); } catch { /* ignore */ }
+                return (
+                  <div key={msg.id} className={cn('rounded-xl border p-3 transition-all', ts.bg, ts.border,
+                    i === 0 && isRunning && 'ring-1 ring-primary/20'
+                  )}>
+                    <div className="flex items-center gap-2 flex-wrap mb-2">
+                      <span className="text-[10px] font-mono text-muted-foreground">{fmtTime(msg.timestamp)}</span>
+                      <span className={cn('text-[9px] font-mono px-1.5 py-0.5 rounded border uppercase', ts.bg, ts.border, ts.text)}>
+                        {msg.type}
+                      </span>
+                      {msg.eventType && (
+                        <span className="text-[10px] font-mono text-muted-foreground bg-background/50 px-1.5 py-0.5 rounded border border-border/30">
+                          {msg.eventType}
+                        </span>
+                      )}
                     </div>
-                    {i < agents.length - 1 && (
-                      <div className="flex justify-center py-1">
-                        <div className="flex flex-col items-center">
-                          <div className="w-px h-3" style={{ background: 'rgba(59,130,246,0.2)' }} />
-                          <ArrowRight className="w-3 h-3 rotate-90" style={{ color: '#1E293B' }} />
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <span className="text-sm leading-none">{AGENT_ICONS[msg.from] ?? '⚙️'}</span>
+                      <span className={cn('text-xs font-semibold', AGENT_COLORS[msg.from] ?? 'text-foreground')}>{msg.from}</span>
+                      <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                      <span className="text-sm leading-none">{AGENT_ICONS[msg.to] ?? '⚙️'}</span>
+                      <span className={cn('text-xs font-semibold', AGENT_COLORS[msg.to] ?? 'text-foreground')}>{msg.to}</span>
+                    </div>
+                    <p className="text-[11px] text-foreground/80 leading-relaxed mb-2">{msg.content}</p>
+                    {parsedPayload && Object.keys(parsedPayload).length > 0 && (
+                      <div className="bg-background/60 rounded-lg p-2 border border-border/30">
+                        <p className="text-[9px] text-muted-foreground font-mono uppercase tracking-wider mb-1">Payload</p>
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                          {Object.entries(parsedPayload).map(([k, v]) => (
+                            <span key={k} className="text-[10px] font-mono">
+                              <span className="text-muted-foreground">{k}:</span>{' '}
+                              <span className="text-primary/80">{Array.isArray(v) ? `[${(v as unknown[]).length}]` : String(v)}</span>
+                            </span>
+                          ))}
                         </div>
                       </div>
                     )}
@@ -93,121 +245,7 @@ export default function AgentComms() {
                 );
               })}
             </div>
-          </div>
-
-          {/* Filter */}
-          <div className="p-5 rounded-xl" style={{ background: 'rgba(10,22,40,0.7)', border: '1px solid rgba(59,130,246,0.12)' }}>
-            <div className="flex items-center gap-2 mb-3">
-              <Filter className="w-3.5 h-3.5" style={{ color: '#475569' }} />
-              <span className="text-xs font-mono font-semibold" style={{ color: '#475569' }}>FILTER</span>
-            </div>
-            <button
-              onClick={() => setFilterAgent('all')}
-              className="w-full text-left px-3 py-2 rounded-lg text-xs font-mono mb-1 transition-all"
-              style={{
-                background: filterAgent === 'all' ? 'rgba(59,130,246,0.12)' : 'transparent',
-                color: filterAgent === 'all' ? '#60A5FA' : '#64748B',
-                border: filterAgent === 'all' ? '1px solid rgba(59,130,246,0.2)' : '1px solid transparent'
-              }}
-            >
-              All Messages
-            </button>
-            {Object.entries(AGENT_META).filter(([name]) => !['System', 'All Zones'].includes(name)).map(([name, meta]) => (
-              <button
-                key={name}
-                onClick={() => setFilterAgent(filterAgent === name ? 'all' : name)}
-                className="w-full text-left px-3 py-2 rounded-lg text-xs font-mono mb-1 transition-all"
-                style={{
-                  background: filterAgent === name ? `${meta.color}12` : 'transparent',
-                  color: filterAgent === name ? meta.color : '#64748B',
-                  border: filterAgent === name ? `1px solid ${meta.color}25` : '1px solid transparent'
-                }}
-              >
-                {meta.icon} {name}
-              </button>
-            ))}
-          </div>
-
-          {/* Message Type Legend */}
-          <div className="p-5 rounded-xl" style={{ background: 'rgba(10,22,40,0.7)', border: '1px solid rgba(59,130,246,0.12)' }}>
-            <div className="text-xs font-mono font-semibold mb-3" style={{ color: '#475569' }}>MESSAGE TYPES</div>
-            <div className="space-y-2">
-              {Object.entries(TYPE_COLORS).map(([type, color]) => (
-                <div key={type} className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full" style={{ background: color }} />
-                  <span className="text-xs font-mono uppercase" style={{ color }}>{type}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Message Feed */}
-        <div className="lg:col-span-3">
-          <div className="p-5 rounded-xl" style={{ background: 'rgba(10,22,40,0.7)', border: '1px solid rgba(59,130,246,0.12)' }}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-xs font-mono font-semibold" style={{ color: '#475569' }}>
-                {filterAgent === 'all' ? 'ALL MESSAGES' : `MESSAGES: ${filterAgent.toUpperCase()}`}
-              </div>
-              {filterAgent !== 'all' && (
-                <button onClick={() => setFilterAgent('all')} className="flex items-center gap-1 text-xs font-mono" style={{ color: '#3B82F6' }}>
-                  <RotateCcw className="w-3 h-3" /> Clear Filter
-                </button>
-              )}
-            </div>
-
-            <div className="space-y-3 max-h-[calc(100vh-220px)] overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin', scrollbarColor: '#1E293B transparent' }}>
-              {filteredMessages.length === 0 ? (
-                <div className="text-center py-16">
-                  <div className="text-4xl mb-4">📡</div>
-                  <div className="text-sm font-semibold mb-1" style={{ color: '#475569' }}>No Messages Yet</div>
-                  <div className="text-xs" style={{ color: '#334155' }}>Run the simulation to see real-time A2A communication</div>
-                </div>
-              ) : (
-                <AnimatePresence>
-                  {filteredMessages.map((msg, i) => {
-                    const fromMeta = AGENT_META[msg.from] || { color: '#475569', icon: '?' };
-                    const toMeta = AGENT_META[msg.to] || { color: '#475569', icon: '?' };
-                    const typeColor = TYPE_COLORS[msg.type] || '#475569';
-                    return (
-                      <motion.div
-                        key={msg.id}
-                        initial={{ opacity: 0, x: -12 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.03 }}
-                        className="p-4 rounded-xl"
-                        style={{ background: 'rgba(0,0,0,0.3)', borderLeft: `3px solid ${fromMeta.color}` }}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-sm">{fromMeta.icon}</span>
-                              <span className="text-xs font-semibold" style={{ color: fromMeta.color }}>{msg.from}</span>
-                            </div>
-                            <ArrowRight className="w-3 h-3" style={{ color: '#334155' }} />
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-sm">{toMeta.icon}</span>
-                              <span className="text-xs font-semibold" style={{ color: toMeta.color }}>{msg.to}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-mono px-1.5 py-0.5 rounded" style={{ background: `${typeColor}15`, color: typeColor, border: `1px solid ${typeColor}25` }}>{msg.type.toUpperCase()}</span>
-                            <span className="text-xs font-mono" style={{ color: '#334155' }}>{msg.timestamp.toLocaleTimeString()}</span>
-                          </div>
-                        </div>
-                        <div className="text-sm leading-relaxed" style={{ color: '#CBD5E1' }}>{msg.content}</div>
-                        <div className="mt-2 flex items-center gap-2">
-                          <span className="text-xs font-mono px-1.5 py-0.5 rounded" style={{ background: 'rgba(59,130,246,0.08)', color: '#475569' }}>
-                            Status: {msg.status}
-                          </span>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
-              )}
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

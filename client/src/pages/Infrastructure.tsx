@@ -1,19 +1,35 @@
 // ============================================================
-// STORMMESH — Infrastructure Predictions Page
-// Predicted outages, damage estimates, recovery timeline
+// BAYSHIELD — Infrastructure Predictions Page
+// Predictive damage timeline, risk matrix, and action plans
 // ============================================================
-
 import { useSimulation } from '@/contexts/SimulationContext';
-import { motion } from 'framer-motion';
-import { Zap, Car, Heart, DollarSign, Clock, Waves, Wind, TrendingUp } from 'lucide-react';
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { cn } from '@/lib/utils';
+import { Zap, Car, Heart, DollarSign, Clock, TrendingUp, CheckCircle2 } from 'lucide-react';
+import {
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
+  ResponsiveContainer, CartesianGrid
+} from 'recharts';
 
-const RISK_COLORS: Record<string, string> = {
-  low: '#10B981',
-  moderate: '#F59E0B',
-  high: '#F97316',
-  critical: '#EF4444',
-  extreme: '#DC2626',
+const RISK_STYLES: Record<string, { text: string; bg: string; border: string; hex: string }> = {
+  low:      { text: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400/20', hex: '#34d399' },
+  moderate: { text: 'text-amber-400',   bg: 'bg-amber-400/10',   border: 'border-amber-400/20',   hex: '#fbbf24' },
+  high:     { text: 'text-orange-400',  bg: 'bg-orange-400/10',  border: 'border-orange-400/20',  hex: '#fb923c' },
+  critical: { text: 'text-red-400',     bg: 'bg-red-400/10',     border: 'border-red-400/20',     hex: '#f87171' },
+  extreme:  { text: 'text-rose-400',    bg: 'bg-rose-400/10',    border: 'border-rose-400/20',    hex: '#fb7185' },
+};
+
+const SEV_STYLES: Record<string, { text: string; bg: string; border: string }> = {
+  monitoring: { text: 'text-slate-400', bg: 'bg-slate-400/10', border: 'border-slate-400/20' },
+  advisory:   { text: 'text-blue-400',  bg: 'bg-blue-400/10',  border: 'border-blue-400/20' },
+  warning:    { text: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/20' },
+  critical:   { text: 'text-red-400',   bg: 'bg-red-400/10',   border: 'border-red-400/20' },
+};
+
+const TOOLTIP_STYLE = {
+  background: 'oklch(0.13 0.014 250)',
+  border: '1px solid rgba(255,255,255,0.08)',
+  borderRadius: '8px',
+  fontSize: '11px',
 };
 
 export default function Infrastructure() {
@@ -30,144 +46,151 @@ export default function Infrastructure() {
   const latest = infraPredictions.length > 0 ? infraPredictions[infraPredictions.length - 1] : null;
 
   return (
-    <div className="p-6 space-y-6" style={{ fontFamily: "'Outfit', sans-serif" }}>
+    <div className="p-5 space-y-5 min-h-full">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-black" style={{ color: '#F1F5F9' }}>Infrastructure Predictions</h1>
-        <p className="text-sm" style={{ color: '#64748B' }}>Predictive damage modeling and recovery timeline analysis</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-lg font-semibold">Infrastructure Predictions</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">AI-generated damage forecasts and recovery timelines</p>
+        </div>
+        {isRunning && (
+          <span className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-lg">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />LIVE
+          </span>
+        )}
       </div>
 
-      {/* Current Predictions Summary */}
+      {/* Current snapshot */}
       {latest ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 gap-3">
           {[
-            { label: 'Power Outage', value: `${latest.powerOutagePct}%`, icon: Zap, color: '#F59E0B', sub: 'Grid failure' },
-            { label: 'Road Closures', value: `${latest.roadClosurePct}%`, icon: Car, color: '#EF4444', sub: 'Impassable' },
-            { label: 'Hospital Risk', value: latest.hospitalRisk.toUpperCase(), icon: Heart, color: RISK_COLORS[latest.hospitalRisk], sub: 'Surge capacity' },
-            { label: 'Damage Estimate', value: latest.damageEstimate, icon: DollarSign, color: '#06B6D4', sub: `Recovery: ${latest.recoveryDays} days` },
-          ].map((stat, i) => {
-            const Icon = stat.icon;
+            { label: 'Power Outage',    value: `${latest.powerOutagePct}%`,       icon: Zap,         risk: latest.powerOutagePct > 70 ? 'critical' : latest.powerOutagePct > 40 ? 'high' : 'moderate' },
+            { label: 'Road Closures',   value: `${latest.roadClosurePct}%`,       icon: Car,         risk: latest.roadClosurePct > 60 ? 'critical' : latest.roadClosurePct > 30 ? 'high' : 'moderate' },
+            { label: 'Hospital Risk',   value: latest.hospitalRisk,               icon: Heart,       risk: latest.hospitalRisk },
+            { label: 'Damage Estimate', value: latest.damageEstimate,             icon: DollarSign,  risk: 'critical' },
+          ].map(({ label, value, icon: Icon, risk }) => {
+            const s = RISK_STYLES[risk] ?? RISK_STYLES.moderate;
             return (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }}
-                className="p-4 rounded-xl"
-                style={{ background: 'rgba(10,22,40,0.7)', border: `1px solid ${stat.color}20` }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-mono" style={{ color: '#475569' }}>{stat.label.toUpperCase()}</span>
-                  <Icon className="w-4 h-4" style={{ color: stat.color }} />
+              <div key={label} className="bg-card border border-border/50 rounded-xl p-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1">{label}</p>
+                    <p className={cn('text-xl font-semibold capitalize', s.text)}>{value}</p>
+                  </div>
+                  <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', s.bg)}>
+                    <Icon className={cn('w-4 h-4', s.text)} />
+                  </div>
                 </div>
-                <div className="text-2xl font-black font-mono" style={{ color: stat.color, textShadow: `0 0 16px ${stat.color}40` }}>{stat.value}</div>
-                <div className="text-xs font-mono mt-1" style={{ color: '#334155' }}>{stat.sub}</div>
-              </motion.div>
+                <span className={cn('mt-2 text-[10px] px-1.5 py-0.5 rounded border inline-block font-mono uppercase', s.bg, s.border, s.text)}>
+                  {risk} risk
+                </span>
+              </div>
             );
           })}
         </div>
       ) : (
-        <div className="p-8 rounded-xl text-center" style={{ background: 'rgba(10,22,40,0.7)', border: '1px solid rgba(59,130,246,0.12)' }}>
-          <div className="text-4xl mb-4">📊</div>
-          <div className="text-sm font-semibold mb-1" style={{ color: '#475569' }}>No Predictions Available</div>
-          <div className="text-xs" style={{ color: '#334155' }}>Run the simulation to generate infrastructure impact predictions</div>
+        <div className="bg-card border border-border/50 rounded-xl p-16 text-center">
+          <TrendingUp className="w-10 h-10 text-muted-foreground/20 mx-auto mb-3" />
+          <p className="text-sm font-medium text-muted-foreground">No predictions yet</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">Infrastructure analysis begins when agents reach Phase 6</p>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Power & Road Outage Chart */}
-        <div className="p-5 rounded-xl" style={{ background: 'rgba(10,22,40,0.7)', border: '1px solid rgba(59,130,246,0.12)' }}>
-          <div className="text-xs font-mono font-semibold mb-4" style={{ color: '#475569' }}>INFRASTRUCTURE FAILURE TIMELINE</div>
-          {chartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={260}>
-              <AreaChart data={chartData}>
+      {/* Charts */}
+      {chartData.length > 0 && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-card border border-border/50 rounded-xl p-4">
+            <h2 className="text-sm font-medium mb-3">Power Outage & Road Closures (%)</h2>
+            <ResponsiveContainer width="100%" height={180}>
+              <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="powerGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
+                  <linearGradient id="pG" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#fbbf24" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#fbbf24" stopOpacity={0} />
                   </linearGradient>
-                  <linearGradient id="roadGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
+                  <linearGradient id="rG" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#f87171" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#f87171" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
-                <XAxis dataKey="time" tick={{ fill: '#475569', fontSize: 10 }} axisLine={{ stroke: '#1E293B' }} tickLine={false} />
-                <YAxis tick={{ fill: '#475569', fontSize: 10 }} axisLine={false} tickLine={false} domain={[0, 100]} />
-                <Tooltip contentStyle={{ background: '#0A1628', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '8px', color: '#E2E8F0', fontSize: '12px' }} />
-                <Area type="monotone" dataKey="power" stroke="#F59E0B" fill="url(#powerGrad)" strokeWidth={2} name="Power Outage %" />
-                <Area type="monotone" dataKey="roads" stroke="#EF4444" fill="url(#roadGrad)" strokeWidth={2} name="Road Closure %" />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                <XAxis dataKey="time" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 9, fill: '#64748b' }} axisLine={false} tickLine={false} domain={[0, 100]} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} labelStyle={{ color: '#94a3b8' }} />
+                <Area type="monotone" dataKey="power" stroke="#fbbf24" strokeWidth={1.5} fill="url(#pG)" name="Power (%)" />
+                <Area type="monotone" dataKey="roads" stroke="#f87171" strokeWidth={1.5} fill="url(#rG)" name="Roads (%)" />
               </AreaChart>
             </ResponsiveContainer>
-          ) : (
-            <div className="h-[260px] flex items-center justify-center text-xs" style={{ color: '#334155' }}>Awaiting simulation data</div>
-          )}
-        </div>
+          </div>
 
-        {/* Flood Depth & Recovery */}
-        <div className="p-5 rounded-xl" style={{ background: 'rgba(10,22,40,0.7)', border: '1px solid rgba(59,130,246,0.12)' }}>
-          <div className="text-xs font-mono font-semibold mb-4" style={{ color: '#475569' }}>FLOOD DEPTH & RECOVERY TIMELINE</div>
-          {chartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
-                <XAxis dataKey="time" tick={{ fill: '#475569', fontSize: 10 }} axisLine={{ stroke: '#1E293B' }} tickLine={false} />
-                <YAxis tick={{ fill: '#475569', fontSize: 10 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background: '#0A1628', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '8px', color: '#E2E8F0', fontSize: '12px' }} />
-                <Bar dataKey="flood" fill="#06B6D4" name="Flood Depth (ft)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="recovery" fill="#8B5CF6" name="Recovery (days)" radius={[4, 4, 0, 0]} />
+          <div className="bg-card border border-border/50 rounded-xl p-4">
+            <h2 className="text-sm font-medium mb-3">Flood Depth (ft) & Recovery (days)</h2>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                <XAxis dataKey="time" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 9, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} labelStyle={{ color: '#94a3b8' }} />
+                <Bar dataKey="flood"    fill="#38bdf8" name="Flood (ft)"  radius={[2, 2, 0, 0]} />
+                <Bar dataKey="recovery" fill="#a78bfa" name="Recovery (d)" radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          ) : (
-            <div className="h-[260px] flex items-center justify-center text-xs" style={{ color: '#334155' }}>Awaiting simulation data</div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Detailed Predictions Table */}
+      {/* Prediction table */}
       {infraPredictions.length > 0 && (
-        <div className="p-5 rounded-xl" style={{ background: 'rgba(10,22,40,0.7)', border: '1px solid rgba(59,130,246,0.12)' }}>
-          <div className="text-xs font-mono font-semibold mb-4" style={{ color: '#475569' }}>DETAILED PREDICTIONS</div>
+        <div className="bg-card border border-border/50 rounded-xl p-4">
+          <h2 className="text-sm font-medium mb-3">Damage Forecast Timeline</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr style={{ borderBottom: '1px solid rgba(59,130,246,0.1)' }}>
-                  {['Timeframe', 'Power Outage', 'Road Closure', 'Hospital Risk', 'Flood Depth', 'Wind Damage', 'Damage Est.', 'Recovery'].map(h => (
-                    <th key={h} className="text-left py-2 px-3 font-mono font-semibold" style={{ color: '#475569' }}>{h}</th>
+                <tr className="border-b border-border/30">
+                  {['Timeframe', 'Power Out', 'Roads Closed', 'Flood Depth', 'Hospital Risk', 'Wind Risk', 'Damage Est.', 'Recovery'].map(h => (
+                    <th key={h} className="text-left py-2 px-2 text-[10px] text-muted-foreground uppercase tracking-wide font-medium">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {infraPredictions.map(p => (
-                  <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                    <td className="py-2.5 px-3 font-mono font-semibold" style={{ color: '#E2E8F0' }}>{p.timeframe}</td>
-                    <td className="py-2.5 px-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-12 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(245,158,11,0.15)' }}>
-                          <div className="h-full rounded-full" style={{ width: `${p.powerOutagePct}%`, background: '#F59E0B' }} />
+                {infraPredictions.map(p => {
+                  const hr = RISK_STYLES[p.hospitalRisk] ?? RISK_STYLES.moderate;
+                  const wr = RISK_STYLES[p.windDamageRisk] ?? RISK_STYLES.moderate;
+                  const isLandfall = p.timeframe === 'Landfall';
+                  return (
+                    <tr key={p.id} className={cn('border-b border-border/20', isLandfall && 'bg-red-400/5')}>
+                      <td className={cn('py-2 px-2 font-mono font-semibold', isLandfall ? 'text-red-400' : 'text-foreground')}>
+                        {p.timeframe}
+                        {isLandfall && <span className="ml-1 text-[9px] bg-red-400/20 text-red-400 px-1 rounded">PEAK</span>}
+                      </td>
+                      <td className="py-2 px-2">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-10 h-1 bg-border/40 rounded-full overflow-hidden">
+                            <div className="h-full bg-amber-400 rounded-full" style={{ width: `${p.powerOutagePct}%` }} />
+                          </div>
+                          <span className="font-mono text-amber-400">{p.powerOutagePct}%</span>
                         </div>
-                        <span className="font-mono" style={{ color: '#F59E0B' }}>{p.powerOutagePct}%</span>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-12 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(239,68,68,0.15)' }}>
-                          <div className="h-full rounded-full" style={{ width: `${p.roadClosurePct}%`, background: '#EF4444' }} />
+                      </td>
+                      <td className="py-2 px-2">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-10 h-1 bg-border/40 rounded-full overflow-hidden">
+                            <div className="h-full bg-red-400 rounded-full" style={{ width: `${p.roadClosurePct}%` }} />
+                          </div>
+                          <span className="font-mono text-red-400">{p.roadClosurePct}%</span>
                         </div>
-                        <span className="font-mono" style={{ color: '#EF4444' }}>{p.roadClosurePct}%</span>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <span className="font-mono px-1.5 py-0.5 rounded" style={{ background: `${RISK_COLORS[p.hospitalRisk]}15`, color: RISK_COLORS[p.hospitalRisk], border: `1px solid ${RISK_COLORS[p.hospitalRisk]}25` }}>{p.hospitalRisk.toUpperCase()}</span>
-                    </td>
-                    <td className="py-2.5 px-3 font-mono" style={{ color: '#06B6D4' }}>{p.floodDepthFt} ft</td>
-                    <td className="py-2.5 px-3">
-                      <span className="font-mono px-1.5 py-0.5 rounded" style={{ background: `${RISK_COLORS[p.windDamageRisk]}15`, color: RISK_COLORS[p.windDamageRisk], border: `1px solid ${RISK_COLORS[p.windDamageRisk]}25` }}>{p.windDamageRisk.toUpperCase()}</span>
-                    </td>
-                    <td className="py-2.5 px-3 font-mono font-semibold" style={{ color: '#E2E8F0' }}>{p.damageEstimate}</td>
-                    <td className="py-2.5 px-3 font-mono" style={{ color: '#8B5CF6' }}>{p.recoveryDays}d</td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="py-2 px-2 font-mono text-sky-400">{p.floodDepthFt} ft</td>
+                      <td className="py-2 px-2">
+                        <span className={cn('text-[10px] px-1.5 py-0.5 rounded border font-mono capitalize', hr.text, hr.bg, hr.border)}>{p.hospitalRisk}</span>
+                      </td>
+                      <td className="py-2 px-2">
+                        <span className={cn('text-[10px] px-1.5 py-0.5 rounded border font-mono capitalize', wr.text, wr.bg, wr.border)}>{p.windDamageRisk}</span>
+                      </td>
+                      <td className="py-2 px-2 font-mono font-semibold">{p.damageEstimate}</td>
+                      <td className="py-2 px-2 font-mono text-violet-400">{p.recoveryDays}d</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -175,41 +198,51 @@ export default function Infrastructure() {
       )}
 
       {/* Action Plans */}
-      {actionPlans.length > 0 && (
-        <div className="space-y-4">
-          <div className="text-xs font-mono font-semibold" style={{ color: '#475569' }}>ACTION PLANS</div>
-          {actionPlans.map((plan, i) => (
-            <motion.div
-              key={plan.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className="p-5 rounded-xl"
-              style={{ background: 'rgba(10,22,40,0.7)', border: `1px solid ${plan.severity === 'critical' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'}` }}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-base font-bold" style={{ color: '#E2E8F0' }}>{plan.title}</h3>
-                <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ background: plan.severity === 'critical' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)', color: plan.severity === 'critical' ? '#EF4444' : '#F59E0B', border: `1px solid ${plan.severity === 'critical' ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)'}` }}>{plan.severity.toUpperCase()}</span>
-              </div>
-              <p className="text-sm mb-4" style={{ color: '#94A3B8' }}>{plan.summary}</p>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {plan.zonesAffected.map(z => (
-                  <span key={z} className="text-xs font-mono px-2 py-0.5 rounded" style={{ background: 'rgba(59,130,246,0.08)', color: '#64748B', border: '1px solid rgba(59,130,246,0.15)' }}>{z}</span>
-                ))}
-                <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ background: 'rgba(245,158,11,0.08)', color: '#F59E0B' }}>{plan.populationCovered.toLocaleString()} residents</span>
-              </div>
-              <div className="space-y-2">
-                {plan.recommendations.map((rec, j) => (
-                  <div key={j} className="flex items-start gap-2 text-xs" style={{ color: '#CBD5E1' }}>
-                    <TrendingUp className="w-3 h-3 mt-0.5 shrink-0" style={{ color: '#3B82F6' }} />
-                    {rec}
+      <div className="space-y-3">
+        <h2 className="text-sm font-medium">Action Plans</h2>
+        {actionPlans.length === 0 ? (
+          <div className="bg-card border border-border/50 rounded-xl p-8 text-center">
+            <Clock className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Action plans generated by Alert Commander in Phase 6+</p>
+          </div>
+        ) : (
+          actionPlans.map(plan => {
+            const ss = SEV_STYLES[plan.severity] ?? SEV_STYLES.monitoring;
+            return (
+              <div key={plan.id} className="bg-card border border-border/50 rounded-xl p-4">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-sm font-semibold">{plan.title}</h3>
+                      <span className={cn('text-[9px] px-1.5 py-0.5 rounded border font-mono uppercase', ss.bg, ss.border, ss.text)}>
+                        {plan.severity}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{plan.summary}</p>
                   </div>
-                ))}
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-[11px] text-muted-foreground font-mono">{plan.agentSource}</p>
+                    <p className="text-xs font-semibold mt-0.5">{plan.populationCovered.toLocaleString()} covered</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5 mb-3">
+                  {plan.recommendations.map((rec, i) => (
+                    <div key={i} className="flex items-start gap-2 text-[11px] text-foreground/80">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <span className="leading-relaxed">{rec}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {plan.zonesAffected.map(z => (
+                    <span key={z} className="text-[10px] px-1.5 py-0.5 rounded bg-background/60 border border-border/30 text-muted-foreground font-mono">{z}</span>
+                  ))}
+                </div>
               </div>
-            </motion.div>
-          ))}
-        </div>
-      )}
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }

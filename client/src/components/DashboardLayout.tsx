@@ -1,198 +1,179 @@
 // ============================================================
-// STORMMESH — Dashboard Layout with Sidebar
-// Persistent sidebar for command center pages
+// BAYSHIELD — DashboardLayout
+// Apple-level sidebar nav with glassmorphism, mode toggle, threat badge
 // ============================================================
-
 import { ReactNode } from 'react';
-import { useLocation, Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { useSimulation } from '@/contexts/SimulationContext';
 import {
   LayoutDashboard,
   MessageSquare,
-  Map,
   Building2,
+  Map,
+  Package,
   Shield,
-  Zap,
-  ChevronLeft,
-  Activity
+  Radio,
+  RotateCcw,
+  ChevronLeft
 } from 'lucide-react';
-
-const THREAT_COLORS: Record<string, string> = {
-  monitoring: '#10B981',
-  advisory: '#06B6D4',
-  warning: '#F59E0B',
-  critical: '#EF4444'
-};
+import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/agents', label: 'Agent Comms', icon: MessageSquare },
-  { path: '/infrastructure', label: 'Infrastructure', icon: Building2 },
-  { path: '/map', label: 'Map View', icon: Map },
-  { path: '/resources', label: 'Resources', icon: Shield },
+  { path: '/dashboard',      label: 'Dashboard',       icon: LayoutDashboard },
+  { path: '/agents',         label: 'Agent Comms',     icon: MessageSquare },
+  { path: '/infrastructure', label: 'Infrastructure',  icon: Building2 },
+  { path: '/map',            label: 'Map View',        icon: Map },
+  { path: '/resources',      label: 'Resources',       icon: Package },
 ];
+
+const THREAT_STYLES: Record<string, { label: string; dotClass: string; textClass: string; bgClass: string }> = {
+  monitoring: { label: 'MONITORING', dotClass: 'bg-slate-400',                                    textClass: 'text-slate-400',  bgClass: 'bg-slate-400/10 border-slate-400/20' },
+  advisory:   { label: 'ADVISORY',   dotClass: 'bg-blue-400 shadow-[0_0_6px_rgba(96,165,250,0.8)]',  textClass: 'text-blue-400',   bgClass: 'bg-blue-400/10 border-blue-400/20'  },
+  warning:    { label: 'WARNING',    dotClass: 'bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]', textClass: 'text-amber-400',  bgClass: 'bg-amber-400/10 border-amber-400/20' },
+  critical:   { label: 'CRITICAL',   dotClass: 'bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.8)]',  textClass: 'text-red-400',    bgClass: 'bg-red-400/10 border-red-400/20'   },
+};
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
-  const { threatLevel, isRunning, agents, simulationPhase, startSimulation, resetSimulation } = useSimulation();
-  const threatColor = THREAT_COLORS[threatLevel] || '#475569';
-  const activeAgents = agents.filter(a => a.status === 'active' || a.status === 'processing').length;
+  const { threatLevel, simulationPhase, totalPhases, isRunning, agents, mode, setMode, startSimulation, resetSimulation } = useSimulation();
+  const threat = THREAT_STYLES[threatLevel] ?? THREAT_STYLES.monitoring;
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#020B18', fontFamily: "'Outfit', sans-serif" }}>
-      {/* Sidebar */}
-      <aside
-        className="fixed top-0 left-0 bottom-0 w-[240px] z-50 flex flex-col"
-        style={{
-          background: 'rgba(5, 12, 28, 0.95)',
-          backdropFilter: 'blur(20px)',
-          borderRight: '1px solid rgba(59, 130, 246, 0.12)'
-        }}
-      >
+    <div className="flex h-screen overflow-hidden bg-background text-foreground">
+      {/* ── Sidebar ── */}
+      <aside className="w-56 flex-shrink-0 flex flex-col border-r border-white/[0.06] bg-[oklch(0.11_0.013_250)]">
         {/* Logo */}
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(59, 130, 246, 0.1)' }}>
-          <Link href="/">
-            <div className="flex items-center gap-2 cursor-pointer group">
-              <ChevronLeft className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#64748B' }} />
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(59,130,246,0.3), rgba(6,182,212,0.2))',
-                  border: '1px solid rgba(59,130,246,0.4)',
-                  boxShadow: '0 0 16px rgba(59,130,246,0.3)'
-                }}
-              >
-                <Zap className="w-4 h-4" style={{ color: '#60A5FA' }} />
-              </div>
-              <div>
-                <span className="text-sm font-bold" style={{ color: '#E2E8F0' }}>
-                  Storm<span style={{ color: '#3B82F6' }}>Mesh</span>
-                </span>
-                <div className="text-xs font-mono" style={{ color: '#334155' }}>v2.4.1</div>
-              </div>
-            </div>
-          </Link>
-        </div>
-
-        {/* Threat Status */}
-        <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(59,130,246,0.08)' }}>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-mono" style={{ color: '#475569' }}>THREAT STATUS</span>
-            {isRunning && (
-              <div className="flex items-center gap-1.5">
-                <div
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: '#10B981', boxShadow: '0 0 6px #10B981', animation: 'agentPulse 1.5s ease-in-out infinite' }}
-                />
-                <span className="text-xs font-mono" style={{ color: '#10B981' }}>LIVE</span>
-              </div>
-            )}
+        <div className="flex items-center gap-2.5 px-4 py-4 border-b border-white/[0.06]">
+          <div className="w-7 h-7 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center">
+            <Shield className="w-4 h-4 text-primary" />
           </div>
-          <div
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-mono font-semibold"
-            style={{
-              background: `${threatColor}12`,
-              border: `1px solid ${threatColor}30`,
-              color: threatColor
-            }}
-          >
-            <div
-              className="w-2 h-2 rounded-full"
-              style={{
-                background: threatColor,
-                animation: threatLevel !== 'monitoring' ? 'agentPulse 1s ease-in-out infinite' : 'none'
-              }}
-            />
-            {threatLevel.toUpperCase()}
-          </div>
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-xs font-mono" style={{ color: '#334155' }}>Phase {simulationPhase}/9</span>
-            <span className="text-xs font-mono" style={{ color: '#334155' }}>{activeAgents} active</span>
+          <div>
+            <div className="text-sm font-semibold tracking-tight text-foreground">BayShield</div>
+            <div className="text-[10px] text-muted-foreground font-mono">v3.0 · Tampa Bay</div>
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {NAV_ITEMS.map(item => {
-            const isActive = location === item.path;
-            const Icon = item.icon;
+        {/* Threat status */}
+        <div className={cn('mx-3 mt-3 px-3 py-2 rounded-lg border', threat.bgClass)}>
+          <div className="flex items-center gap-2">
+            <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', threat.dotClass,
+              threatLevel !== 'monitoring' && 'animate-pulse-live')} />
+            <span className={cn('text-[10px] font-semibold tracking-widest font-mono', threat.textClass)}>
+              {threat.label}
+            </span>
+          </div>
+          <div className="mt-1 flex items-center justify-between">
+            <span className="text-[10px] text-muted-foreground font-mono">
+              Phase {simulationPhase}/{totalPhases}
+            </span>
+            <span className="text-[10px] text-muted-foreground font-mono">
+              {agents.filter(a => a.status === 'active' || a.status === 'processing').length} active
+            </span>
+          </div>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
+          {NAV_ITEMS.map(({ path, label, icon: Icon }) => {
+            const active = location === path;
             return (
-              <Link key={item.path} href={item.path}>
-                <div
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer"
-                  style={{
-                    background: isActive ? 'rgba(59,130,246,0.12)' : 'transparent',
-                    color: isActive ? '#60A5FA' : '#64748B',
-                    border: isActive ? '1px solid rgba(59,130,246,0.2)' : '1px solid transparent'
-                  }}
-                >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  {item.label}
+              <Link key={path} href={path}>
+                <div className={cn(
+                  'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all duration-150 cursor-pointer',
+                  active
+                    ? 'bg-primary/15 text-primary font-medium'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-white/[0.04]'
+                )}>
+                  <Icon className={cn('w-4 h-4 flex-shrink-0', active ? 'text-primary' : '')} />
+                  {label}
                 </div>
               </Link>
             );
           })}
         </nav>
 
-        {/* Simulation Control */}
-        <div className="px-4 py-4" style={{ borderTop: '1px solid rgba(59,130,246,0.1)' }}>
-          {!isRunning ? (
-            <button
-              onClick={startSimulation}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300"
-              style={{
-                background: 'linear-gradient(135deg, #3B82F6, #06B6D4)',
-                color: '#fff',
-                boxShadow: '0 0 20px rgba(59,130,246,0.3)',
-                border: 'none'
-              }}
-            >
-              <Activity className="w-4 h-4" />
-              Run Simulation
-            </button>
-          ) : (
-            <button
-              onClick={resetSimulation}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all"
-              style={{
-                background: 'rgba(239,68,68,0.12)',
-                color: '#EF4444',
-                border: '1px solid rgba(239,68,68,0.3)'
-              }}
-            >
-              Reset Simulation
-            </button>
-          )}
-        </div>
-
-        {/* Agent Mini Status */}
-        <div className="px-4 pb-4">
-          <div className="grid grid-cols-4 gap-1.5">
+        {/* Agent mini-status */}
+        <div className="px-3 pb-2">
+          <div className="grid grid-cols-4 gap-1">
             {agents.map(agent => (
               <div
                 key={agent.id}
-                className="flex flex-col items-center gap-1 py-1.5 rounded"
-                style={{
-                  background: agent.status !== 'idle' ? `${agent.color}10` : 'transparent'
-                }}
                 title={`${agent.name}: ${agent.status}`}
+                className="flex flex-col items-center gap-1 py-1.5 rounded-md bg-white/[0.02]"
               >
-                <span className="text-xs">{agent.icon}</span>
-                <div
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{
-                    background: agent.status === 'idle' ? '#334155' : agent.color,
-                    boxShadow: agent.status !== 'idle' ? `0 0 4px ${agent.color}` : 'none'
-                  }}
-                />
+                <span className="text-xs leading-none">{agent.icon}</span>
+                <span className={cn(
+                  'w-1.5 h-1.5 rounded-full',
+                  agent.status === 'idle'       ? 'bg-slate-600' :
+                  agent.status === 'active'     ? 'bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.8)]' :
+                  agent.status === 'processing' ? 'bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.8)] animate-pulse-live' :
+                  agent.status === 'complete'   ? 'bg-blue-400 shadow-[0_0_4px_rgba(96,165,250,0.8)]' :
+                                                  'bg-red-400'
+                )} />
               </div>
             ))}
           </div>
         </div>
+
+        {/* Mode toggle + controls */}
+        <div className="px-3 pb-4 space-y-2 border-t border-white/[0.06] pt-3">
+          {/* Mode toggle */}
+          <div className="flex rounded-lg overflow-hidden border border-white/[0.08] text-[11px] font-medium">
+            <button
+              onClick={() => setMode('simulation')}
+              className={cn(
+                'flex-1 py-1.5 transition-colors',
+                mode === 'simulation' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Simulation
+            </button>
+            <button
+              onClick={() => setMode('live')}
+              className={cn(
+                'flex-1 py-1.5 transition-colors',
+                mode === 'live' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Live
+            </button>
+          </div>
+
+          {/* Run / Reset */}
+          <div className="flex gap-1.5">
+            <button
+              onClick={startSimulation}
+              disabled={isRunning}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-medium transition-all',
+                isRunning
+                  ? 'bg-primary/10 text-primary/50 cursor-not-allowed'
+                  : 'bg-primary/15 text-primary hover:bg-primary/25 border border-primary/20'
+              )}
+            >
+              <Radio className={cn('w-3 h-3', isRunning && 'animate-pulse')} />
+              {isRunning ? 'Running...' : 'Run'}
+            </button>
+            <button
+              onClick={resetSimulation}
+              className="flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition-colors border border-white/[0.08]"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Back to landing */}
+          <Link href="/">
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition-colors cursor-pointer">
+              <ChevronLeft className="w-3 h-3" />
+              Back to Landing
+            </div>
+          </Link>
+        </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 ml-[240px] min-h-screen">
+      {/* ── Main content ── */}
+      <main className="flex-1 overflow-y-auto">
         {children}
       </main>
     </div>
