@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useSimulation } from '@/contexts/SimulationContext';
 import { cn } from '@/lib/utils';
 import { ArrowRight, MessageSquare, Zap, GitBranch, RotateCcw, CheckCircle2, Filter } from 'lucide-react';
+import ADKPipelinePanel from '@/components/ADKPipelinePanel';
 
 const MSG_TYPE_STYLES: Record<string, { bg: string; border: string; text: string; barColor: string }> = {
   alert:    { bg: 'bg-red-400/8',     border: 'border-red-400/20',    text: 'text-red-400',    barColor: '#f87171' },
@@ -128,6 +129,9 @@ export default function AgentComms() {
           })}
         </div>
       </div>
+
+      {/* ADK Backend Panel */}
+      <ADKPipelinePanel />
 
       {/* Message log */}
       <div className="grid grid-cols-4 gap-4">

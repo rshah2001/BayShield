@@ -1,30 +1,33 @@
-# StormMesh Expansion — Multi-Page Command Center
+# BayShield TODO
 
-## Phase 1: Data Models & Simulation Engine
-- [ ] Create comprehensive data models (WeatherAlert, VulnerableZone, Resource, ActionPlan, AgentMessage, InfrastructurePrediction)
-- [ ] Build simulation engine with full pipeline orchestration
-- [ ] Implement agent pipeline system (6 pipelines: Threat Detection, Vulnerability Analysis, Resource Coordination, Decision, Infrastructure Prediction, Agent Communication)
+## Completed Frontend Features
+- [x] Multi-page SaaS layout (Landing, Dashboard, AgentComms, Infrastructure, Map, Resources)
+- [x] SimulationContext with dual-mode (Live/Simulation)
+- [x] useLiveWeather hook with real NOAA/NWS APIs (5 endpoints)
+- [x] Google Maps singleton fix (no duplicate script)
+- [x] EvacuationRouter with GPS, Directions API, flood zone penalty scoring
+- [x] Merge Map View + Evacuation into single page
+- [x] Live mode agents complete to 100%
+- [x] LiveSyncBadge countdown timer
+- [x] Context-aware LiveTicker (NWS alerts in Live, Helena in Simulation, No Threats when clear)
+- [x] Full-stack upgrade (web-db-user)
 
-## Phase 2: Multi-Page Routing & Layout
-- [ ] Set up multi-page routing (Landing, Dashboard, Agent Comms, Infrastructure, Map, Resources)
-- [ ] Create persistent sidebar layout for dashboard pages
-- [ ] Build Landing Page with project overview, architecture diagram, features, launch button
+## Backend Architecture Upgrade
+- [x] Resolve merge conflicts in Home.tsx and DashboardLayout.tsx after web-db-user upgrade
+- [x] Design and push database schema (agent_runs, agent_messages, shelter_status, action_plans, vulnerability_zones, weather_snapshots)
+- [x] Build Python ADK agent service (4 agents: StormWatcher LoopAgent, VulnerabilityMapper ParallelAgent, ResourceCoordinator ParallelAgent, AlertCommander SelfCorrectingLoopAgent)
+- [x] Build tRPC backend routes for agent orchestration (runPipeline, latestRun, liveWeather, generateSummary, explainCorrection)
+- [x] LLM integration: emergency briefing summaries and self-correction explanations via invokeLLM
+- [x] Real shelter status adapter (live source + estimated fallback with clear labeling)
+- [x] Backend-managed A2A orchestration with structured AgentTrace model stored in DB
+- [x] Frontend: ADKPipelinePanel component on AgentComms page (agent traces, A2A messages, action plans, LLM briefing)
+- [x] Frontend: deterministic vs estimated badges on all outputs
+- [x] Frontend: backend execution timeline in Agent Comms page
+- [x] Frontend: validation/correction event display when plans are recomputed
+- [x] Create agent.json A2A discovery cards for all 4 agents + agent-registry.json
+- [x] Write vitest tests for bayshield router (14 tests passing)
 
-## Phase 3: Dashboard Page
-- [ ] Live stats cards (alerts, zones, shelters, population at risk)
-- [ ] Threat severity gauge
-- [ ] Agent status cards with real-time updates
-- [ ] Map view with alerts/zones/resources
-- [ ] Activity feed (live agent messages)
-- [ ] "Run Simulation" button that triggers full pipeline
-
-## Phase 4: Additional Pages
-- [ ] Agent Communications page (real-time message log, filter by agent, agent flow diagram)
-- [ ] Infrastructure page (predicted outages, damage, recovery timeline, risk viz)
-- [ ] Map page (full-screen map with alerts, zones, resources)
-- [ ] Resources page (shelters/hospitals with capacity bars)
-
-## Phase 5: Polish & Integration
-- [ ] Framer Motion animations throughout
-- [ ] Real-time update simulation (auto-updating dashboard)
-- [ ] Final integration testing across all pages
+## Remaining / Future Work
+- [ ] Add SSE streaming endpoint from backend to frontend for live agent state updates
+- [ ] Frontend: consume backend SSE for live agent states replacing frontend hooks
+- [ ] System Monitoring page showing all service health (frontend, backend, Python ADK, LLM, shelter feed, routing)
