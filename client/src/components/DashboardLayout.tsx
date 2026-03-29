@@ -15,7 +15,6 @@ import {
   Radio,
   RotateCcw,
   ChevronLeft,
-  Navigation
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -23,9 +22,8 @@ const NAV_ITEMS = [
   { path: '/dashboard',      label: 'Dashboard',       icon: LayoutDashboard },
   { path: '/agents',         label: 'Agent Comms',     icon: MessageSquare },
   { path: '/infrastructure', label: 'Infrastructure',  icon: Building2 },
-  { path: '/map',            label: 'Map View',        icon: Map },
+  { path: '/map',            label: 'Map & Evacuation', icon: Map },
   { path: '/resources',      label: 'Resources',       icon: Package },
-  { path: '/evacuation',     label: 'Evacuation',      icon: Navigation },
 ];
 
 const THREAT_STYLES: Record<string, { label: string; dotClass: string; textClass: string; bgClass: string }> = {
