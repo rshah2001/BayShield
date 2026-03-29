@@ -72,3 +72,8 @@
 - [x] Intensity trend indicators on track: arrows/badges showing strengthening ↑ or weakening ↓ at each waypoint
 - [x] Redesigned impact analysis panel: cleaner layout, intensity timeline chart, better visual hierarchy
 - [x] Fix LLM JSON parse error: robust extraction strips markdown fences and repairs truncated JSON
+
+## Storm Simulator Bug Fixes & Mobile
+- [ ] Fix canvas overlay — vortex not rendering on the map (canvas positioning broken)
+- [ ] Fix Hide/Show Vortex toggle — button does nothing currently
+- [ ] Make Storm Simulator fully mobile-responsive (stacked layout, touch-friendly controls, scrollable panels)

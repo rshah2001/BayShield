@@ -5,7 +5,6 @@
  * infrastructure impact analysis, and persists the result to the DB.
  */
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import { publicProcedure, router } from "../_core/trpc";
 import { invokeLLM } from "../_core/llm";
 import { getDb } from "../db";
@@ -41,122 +40,123 @@ const CreateSimulationInput = z.object({
   landfall: TrackPointSchema.optional(),
 });
 
-// ── LLM prompt builder ───────────────────────────────────────────────────────
+// ── LLM JSON schema ──────────────────────────────────────────────────────────
+
+const ANALYSIS_JSON_SCHEMA = {
+  name: "storm_analysis",
+  strict: true,
+  schema: {
+    type: "object",
+    properties: {
+      summary: { type: "string" },
+      affectedPopulation: { type: "integer" },
+      threatLevel: { type: "string", enum: ["CRITICAL", "HIGH", "MODERATE", "LOW"] },
+      infrastructureImpacts: {
+        type: "object",
+        properties: {
+          power:          { type: "object", properties: { severity: { type: "string" }, description: { type: "string" }, outageEstimate: { type: "string" }, specificClosures: { type: "string" } }, required: ["severity","description","outageEstimate","specificClosures"], additionalProperties: false },
+          roads:          { type: "object", properties: { severity: { type: "string" }, description: { type: "string" }, outageEstimate: { type: "string" }, specificClosures: { type: "string" } }, required: ["severity","description","outageEstimate","specificClosures"], additionalProperties: false },
+          bridges:        { type: "object", properties: { severity: { type: "string" }, description: { type: "string" }, outageEstimate: { type: "string" }, specificClosures: { type: "string" } }, required: ["severity","description","outageEstimate","specificClosures"], additionalProperties: false },
+          airports:       { type: "object", properties: { severity: { type: "string" }, description: { type: "string" }, outageEstimate: { type: "string" }, specificClosures: { type: "string" } }, required: ["severity","description","outageEstimate","specificClosures"], additionalProperties: false },
+          port:           { type: "object", properties: { severity: { type: "string" }, description: { type: "string" }, outageEstimate: { type: "string" }, specificClosures: { type: "string" } }, required: ["severity","description","outageEstimate","specificClosures"], additionalProperties: false },
+          hospitals:      { type: "object", properties: { severity: { type: "string" }, description: { type: "string" }, outageEstimate: { type: "string" }, specificClosures: { type: "string" } }, required: ["severity","description","outageEstimate","specificClosures"], additionalProperties: false },
+          communications: { type: "object", properties: { severity: { type: "string" }, description: { type: "string" }, outageEstimate: { type: "string" }, specificClosures: { type: "string" } }, required: ["severity","description","outageEstimate","specificClosures"], additionalProperties: false },
+          waterSewer:     { type: "object", properties: { severity: { type: "string" }, description: { type: "string" }, outageEstimate: { type: "string" }, specificClosures: { type: "string" } }, required: ["severity","description","outageEstimate","specificClosures"], additionalProperties: false },
+        },
+        required: ["power","roads","bridges","airports","port","hospitals","communications","waterSewer"],
+        additionalProperties: false,
+      },
+      evacuationZones: {
+        type: "object",
+        properties: {
+          mandatory:         { type: "array", items: { type: "string" } },
+          recommended:       { type: "array", items: { type: "string" } },
+          estimatedEvacuees: { type: "integer" },
+          timeToEvacuate:    { type: "string" },
+        },
+        required: ["mandatory","recommended","estimatedEvacuees","timeToEvacuate"],
+        additionalProperties: false,
+      },
+      shelterDemand: {
+        type: "object",
+        properties: {
+          estimatedShelterNeeds: { type: "integer" },
+          recommendedShelters:   { type: "array", items: { type: "string" } },
+          specialNeedsCount:     { type: "integer" },
+        },
+        required: ["estimatedShelterNeeds","recommendedShelters","specialNeedsCount"],
+        additionalProperties: false,
+      },
+      stormSurge: {
+        type: "object",
+        properties: {
+          maxSurgeMeters:     { type: "number" },
+          affectedCoastlineKm:{ type: "number" },
+          highRiskAreas:      { type: "array", items: { type: "string" } },
+        },
+        required: ["maxSurgeMeters","affectedCoastlineKm","highRiskAreas"],
+        additionalProperties: false,
+      },
+      economicImpact: {
+        type: "object",
+        properties: {
+          estimatedDamageUSD: { type: "string" },
+          recoveryMonths:     { type: "integer" },
+          details:            { type: "string" },
+        },
+        required: ["estimatedDamageUSD","recoveryMonths","details"],
+        additionalProperties: false,
+      },
+      immediateActions: { type: "array", items: { type: "string" } },
+      agentRecommendations: {
+        type: "object",
+        properties: {
+          stormWatcher:         { type: "string" },
+          vulnerabilityMapper:  { type: "string" },
+          resourceCoordinator:  { type: "string" },
+          alertCommander:       { type: "string" },
+        },
+        required: ["stormWatcher","vulnerabilityMapper","resourceCoordinator","alertCommander"],
+        additionalProperties: false,
+      },
+    },
+    required: [
+      "summary","affectedPopulation","threatLevel","infrastructureImpacts",
+      "evacuationZones","shelterDemand","stormSurge","economicImpact",
+      "immediateActions","agentRecommendations"
+    ],
+    additionalProperties: false,
+  },
+};
+
+// ── Prompt builder ────────────────────────────────────────────────────────────
 
 function buildAnalysisPrompt(input: z.infer<typeof CreateSimulationInput>): string {
   const categoryLabel = input.stormType === "hurricane"
     ? `Category ${input.category ?? 1} Hurricane`
     : input.stormType.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 
+  // Limit to 6 waypoints to keep prompt short
   const trackSummary = input.track
-    .map((p, i) => `  Point ${i + 1}: ${p.lat.toFixed(4)}°N, ${p.lng.toFixed(4)}°W${p.label ? ` (${p.label})` : ""}`)
-    .join("\n");
+    .slice(0, 6)
+    .map((p, i) => `Pt${i + 1}: ${p.lat.toFixed(3)}N ${p.lng.toFixed(3)}W`)
+    .join(" → ");
 
   const landfallStr = input.landfall
-    ? `Projected landfall: ${input.landfall.lat.toFixed(4)}°N, ${input.landfall.lng.toFixed(4)}°W${input.landfall.label ? ` (${input.landfall.label})` : ""}`
-    : "Landfall point: not specified (use track endpoint)";
+    ? `Landfall: ${input.landfall.lat.toFixed(3)}N ${input.landfall.lng.toFixed(3)}W`
+    : `Landfall: ${input.track[input.track.length - 1].lat.toFixed(3)}N ${input.track[input.track.length - 1].lng.toFixed(3)}W`;
 
-  return `You are BayShield's AI Infrastructure Impact Analyst for the Tampa Bay, Florida region.
+  return `You are BayShield's AI Infrastructure Impact Analyst for Tampa Bay, Florida.
 
-A user has created a storm simulation with the following parameters:
-
-STORM: ${input.name}
-TYPE: ${categoryLabel}
-WIND SPEED: ${input.windSpeedKph} km/h (${Math.round(input.windSpeedKph / 1.852)} knots)
-WIND RADIUS: ${input.radiusKm} km from center
-FORWARD SPEED: ${input.forwardSpeedKph} km/h
+STORM: "${input.name}" | ${categoryLabel} | Wind: ${input.windSpeedKph} km/h | Radius: ${input.radiusKm} km | Forward: ${input.forwardSpeedKph} km/h
+Track: ${trackSummary}
 ${landfallStr}
 
-TRACK WAYPOINTS:
-${trackSummary}
+Tampa Bay context (3.2M pop): Hillsborough, Pinellas, Pasco, Manatee, Sarasota counties.
+Key assets: Port Tampa Bay, MacDill AFB, Tampa Intl Airport, Tampa General/St. Joseph's/BayCare hospitals, Sunshine Skyway Bridge, I-275/I-75/I-4.
+Vulnerable: Pinellas Peninsula evac zones A-E, barrier islands (Clearwater Beach, St. Pete Beach), 85k mobile homes.
 
-Tampa Bay Regional Context:
-- Counties in impact zone: Hillsborough, Pinellas, Pasco, Manatee, Sarasota
-- Total regional population: ~3.2 million
-- Critical infrastructure: Port Tampa Bay (largest US Gulf port), MacDill Air Force Base, Tampa International Airport, 3 major hospitals (Tampa General, St. Joseph's, BayCare), I-275/I-75/I-4 interchange, Sunshine Skyway Bridge
-- Vulnerable areas: Pinellas Peninsula (evacuation zones A-E), low-lying coastal communities, mobile home parks (~85,000 units), barrier islands (St. Pete Beach, Clearwater Beach, Anna Maria Island)
-
-Provide a detailed infrastructure impact analysis in the following EXACT JSON format. Be specific, realistic, and data-driven based on the storm parameters and Tampa Bay geography:
-
-{
-  "summary": "2-3 sentence executive summary of the storm's expected impact",
-  "affectedPopulation": <integer estimate of people in impact zone>,
-  "threatLevel": "<CRITICAL|HIGH|MODERATE|LOW>",
-  "infrastructureImpacts": {
-    "power": {
-      "severity": "<catastrophic|major|moderate|minor>",
-      "estimatedOutages": "<number> customers",
-      "restorationDays": <integer>,
-      "details": "specific power grid impact description"
-    },
-    "roads": {
-      "severity": "<catastrophic|major|moderate|minor>",
-      "closures": ["list of specific roads/bridges likely to close"],
-      "floodingRisk": "description of road flooding risk",
-      "details": "overall road impact description"
-    },
-    "bridges": {
-      "severity": "<catastrophic|major|moderate|minor>",
-      "atRisk": ["list of bridges at risk"],
-      "details": "bridge closure/damage assessment"
-    },
-    "airports": {
-      "severity": "<catastrophic|major|moderate|minor>",
-      "closureHours": <integer>,
-      "details": "airport impact description"
-    },
-    "port": {
-      "severity": "<catastrophic|major|moderate|minor>",
-      "closureHours": <integer>,
-      "details": "Port Tampa Bay impact description"
-    },
-    "hospitals": {
-      "severity": "<catastrophic|major|moderate|minor>",
-      "atRisk": ["list of hospitals at risk"],
-      "details": "healthcare infrastructure impact"
-    },
-    "communications": {
-      "severity": "<catastrophic|major|moderate|minor>",
-      "details": "cell towers, internet, emergency comms impact"
-    },
-    "waterSewer": {
-      "severity": "<catastrophic|major|moderate|minor>",
-      "details": "water treatment and sewer system impact"
-    }
-  },
-  "evacuationZones": {
-    "mandatory": ["list of specific zones/areas requiring mandatory evacuation"],
-    "recommended": ["list of zones with recommended evacuation"],
-    "estimatedEvacuees": <integer>,
-    "timeToEvacuate": "<X hours recommended lead time>"
-  },
-  "shelterDemand": {
-    "estimatedShelterNeeds": <integer>,
-    "recommendedShelters": ["list of shelter names/locations"],
-    "specialNeedsCount": <integer>
-  },
-  "stormSurge": {
-    "maxSurgeMeters": <float>,
-    "affectedCoastlineKm": <float>,
-    "highRiskAreas": ["list of highest surge risk areas"]
-  },
-  "economicImpact": {
-    "estimatedDamageUSD": "<range in billions>",
-    "recoveryMonths": <integer>,
-    "details": "economic impact description"
-  },
-  "immediateActions": [
-    "list of 5-7 specific, prioritized immediate response actions"
-  ],
-  "agentRecommendations": {
-    "stormWatcher": "what the Storm Watcher agent should monitor",
-    "vulnerabilityMapper": "which zones the Vulnerability Mapper should prioritize",
-    "resourceCoordinator": "resource pre-positioning recommendations",
-    "alertCommander": "alert issuance and escalation recommendations"
-  }
-}
-
-Return ONLY the JSON object, no markdown fences, no extra text.`;
+Analyze the realistic infrastructure impact of this storm on Tampa Bay. Be specific and data-driven. Keep each string under 150 characters. Keep arrays to 2-3 items.`;
 }
 
 // ── Router ───────────────────────────────────────────────────────────────────
@@ -165,7 +165,6 @@ export const simulatorRouter = router({
 
   /**
    * Create a new storm simulation and run LLM analysis.
-   * Returns the full simulation record including analysis.
    */
   create: publicProcedure
     .input(CreateSimulationInput)
@@ -173,7 +172,6 @@ export const simulatorRouter = router({
       const db = await getDb();
       const simId = randomUUID();
 
-      // Insert pending record
       if (db) {
         await db.insert(stormSimulations).values({
           simId,
@@ -189,7 +187,6 @@ export const simulatorRouter = router({
         });
       }
 
-      // Run LLM analysis
       let analysis: Record<string, unknown> | null = null;
       let analysisText = "";
       let affectedPopulation = 0;
@@ -201,11 +198,14 @@ export const simulatorRouter = router({
           messages: [
             {
               role: "system",
-              content: "You are BayShield's AI Infrastructure Impact Analyst. Always respond with valid JSON only.",
+              content: "You are BayShield's AI Infrastructure Impact Analyst for Tampa Bay, Florida. Respond with structured JSON analysis only.",
             },
             { role: "user", content: prompt },
           ],
-          response_format: { type: "json_object" },
+          response_format: {
+            type: "json_schema",
+            json_schema: ANALYSIS_JSON_SCHEMA,
+          },
         });
 
         const raw = (llmResponse as { choices: Array<{ message: { content: string } }> })
@@ -213,54 +213,58 @@ export const simulatorRouter = router({
 
         analysisText = raw;
 
-        // Robust JSON extraction: strip markdown fences, find outermost {...}
+        // Robust JSON extraction
         let jsonStr = raw.trim();
-        // Remove ```json ... ``` or ``` ... ``` wrappers
-        jsonStr = jsonStr.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-        // Find the first '{' and last '}' to extract the JSON object
-        const firstBrace = jsonStr.indexOf('{');
-        const lastBrace = jsonStr.lastIndexOf('}');
+        jsonStr = jsonStr.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+        const firstBrace = jsonStr.indexOf("{");
+        const lastBrace = jsonStr.lastIndexOf("}");
         if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
           jsonStr = jsonStr.slice(firstBrace, lastBrace + 1);
         }
 
-        // Attempt parse; on failure try to repair truncated JSON by closing open brackets
         let parsed: Record<string, unknown>;
         try {
           parsed = JSON.parse(jsonStr) as Record<string, unknown>;
         } catch {
-          // Count unmatched braces/brackets and close them
+          // Repair truncated JSON by closing open brackets
           let depth = 0;
           let inString = false;
           let escape = false;
+          const openStack: string[] = [];
           for (const ch of jsonStr) {
             if (escape) { escape = false; continue; }
-            if (ch === '\\' && inString) { escape = true; continue; }
+            if (ch === "\\" && inString) { escape = true; continue; }
             if (ch === '"') { inString = !inString; continue; }
             if (inString) continue;
-            if (ch === '{' || ch === '[') depth++;
-            if (ch === '}' || ch === ']') depth--;
+            if (ch === "{") { depth++; openStack.push("}"); }
+            else if (ch === "[") { depth++; openStack.push("]"); }
+            else if (ch === "}" || ch === "]") { depth--; openStack.pop(); }
           }
-          let repaired = jsonStr;
-          // Remove trailing comma before closing
-          repaired = repaired.replace(/,\s*$/, '');
-          // Close any open arrays/objects
-          while (depth > 0) { repaired += '}'; depth--; }
+          let repaired = jsonStr.replace(/,\s*$/, "");
+          while (openStack.length > 0) { repaired += openStack.pop(); }
           try {
             parsed = JSON.parse(repaired) as Record<string, unknown>;
           } catch {
-            // Last resort: return a minimal valid structure
             parsed = {
-              summary: 'Analysis partially generated — please retry for full results.',
+              summary: "Analysis partially generated — please retry for full results.",
               affectedPopulation: 0,
-              threatLevel: 'MODERATE',
-              infrastructureImpacts: {},
-              evacuationZones: { mandatory: [], recommended: [], estimatedEvacuees: 0, timeToEvacuate: 'Unknown' },
+              threatLevel: "MODERATE",
+              infrastructureImpacts: {
+                power: { severity: "moderate", description: "Impact assessment pending", outageEstimate: "Unknown", specificClosures: "" },
+                roads: { severity: "moderate", description: "Impact assessment pending", outageEstimate: "Unknown", specificClosures: "" },
+                bridges: { severity: "moderate", description: "Impact assessment pending", outageEstimate: "", specificClosures: "" },
+                airports: { severity: "moderate", description: "Impact assessment pending", outageEstimate: "Unknown", specificClosures: "" },
+                port: { severity: "moderate", description: "Impact assessment pending", outageEstimate: "Unknown", specificClosures: "" },
+                hospitals: { severity: "minor", description: "Impact assessment pending", outageEstimate: "", specificClosures: "" },
+                communications: { severity: "moderate", description: "Impact assessment pending", outageEstimate: "Unknown", specificClosures: "" },
+                waterSewer: { severity: "moderate", description: "Impact assessment pending", outageEstimate: "Unknown", specificClosures: "" },
+              },
+              evacuationZones: { mandatory: [], recommended: [], estimatedEvacuees: 0, timeToEvacuate: "Unknown" },
               shelterDemand: { estimatedShelterNeeds: 0, recommendedShelters: [], specialNeedsCount: 0 },
               stormSurge: { maxSurgeMeters: 0, affectedCoastlineKm: 0, highRiskAreas: [] },
-              economicImpact: { estimatedDamageUSD: 'Unknown', recoveryMonths: 0, details: '' },
+              economicImpact: { estimatedDamageUSD: "Unknown", recoveryMonths: 0, details: "" },
               immediateActions: [],
-              agentRecommendations: {},
+              agentRecommendations: { stormWatcher: "", vulnerabilityMapper: "", resourceCoordinator: "", alertCommander: "" },
             };
           }
         }
@@ -274,7 +278,6 @@ export const simulatorRouter = router({
         analysisText = "LLM analysis failed. Please try again.";
       }
 
-      // Update DB record with results
       if (db) {
         await db.update(stormSimulations)
           .set({ analysis, analysisText, affectedPopulation, status, updatedAt: new Date() })
@@ -328,32 +331,31 @@ export const simulatorRouter = router({
     }),
 
   /**
-   * Get a single simulation by simId (includes full analysis).
+   * Get a single simulation by ID.
    */
   get: publicProcedure
-    .input(z.object({ simId: z.string() }))
+    .input(z.object({ simId: z.string().uuid() }))
     .query(async ({ input }) => {
       const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      if (!db) return null;
 
-      const rows = await db
+      const [row] = await db
         .select()
         .from(stormSimulations)
         .where(eq(stormSimulations.simId, input.simId))
         .limit(1);
 
-      if (!rows.length) throw new TRPCError({ code: "NOT_FOUND", message: "Simulation not found" });
-      return rows[0];
+      return row ?? null;
     }),
 
   /**
-   * Delete a simulation by simId.
+   * Delete a simulation by ID.
    */
   delete: publicProcedure
-    .input(z.object({ simId: z.string() }))
+    .input(z.object({ simId: z.string().uuid() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      if (!db) return { success: false };
 
       await db.delete(stormSimulations).where(eq(stormSimulations.simId, input.simId));
       return { success: true };

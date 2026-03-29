@@ -1,6 +1,7 @@
 // ============================================================
-// BAYSHIELD — Storm Simulation Studio v3
-// Dark map theme · vortex on map · intensity trend · clean UI
+// BAYSHIELD — Storm Simulation Studio v4
+// Fixes: map stored in state so overlay re-renders correctly
+// Mobile: stacked responsive layout with bottom sheet panels
 // ============================================================
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { MapView } from '@/components/Map';
@@ -8,11 +9,11 @@ import { trpc } from '@/lib/trpc';
 import HurricaneMapOverlay from '@/components/HurricaneMapOverlay';
 import { cn } from '@/lib/utils';
 import {
-  Plus, Trash2, Play, RotateCcw, ChevronDown,
+  Plus, Trash2, Play, RotateCcw, ChevronDown, ChevronUp,
   Zap, AlertTriangle, Users, Building2, Car, Waves, DollarSign,
   Radio, Droplets, Plane, Ship, Hospital, Clock,
   CheckCircle2, Loader2, History, X, Wind, Square,
-  TrendingUp, TrendingDown, Minus, ArrowRight,
+  TrendingUp, TrendingDown, Minus, ArrowRight, Settings,
 } from 'lucide-react';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -26,12 +27,13 @@ interface StormParams {
   forwardSpeedKph: number;
 }
 type SimStatus = 'idle' | 'analyzing' | 'complete' | 'error';
+type MobileTab = 'config' | 'analysis';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STORM_TYPES = [
   { value: 'hurricane', label: 'Hurricane', icon: '🌀' },
   { value: 'tropical_storm', label: 'Tropical Storm', icon: '🌪️' },
-  { value: 'tropical_depression', label: 'Tropical Depression', icon: '🌧️' },
+  { value: 'tropical_depression', label: 'Tropical Dep.', icon: '🌧️' },
   { value: 'tornado', label: 'Tornado', icon: '🌪️' },
   { value: 'flood', label: 'Flood Event', icon: '🌊' },
   { value: 'nor_easter', label: "Nor'easter", icon: '❄️' },
@@ -59,7 +61,6 @@ const THREAT_STYLE: Record<string, string> = {
   LOW:      'text-emerald-400 bg-emerald-400/10 border-emerald-400/30',
 };
 
-// Dark night-mode map style matching BayShield's bioluminescent ocean theme
 const DARK_MAP_STYLE: google.maps.MapTypeStyle[] = [
   { elementType: 'geometry', stylers: [{ color: '#0a1628' }] },
   { elementType: 'labels.text.stroke', stylers: [{ color: '#020b18' }] },
@@ -83,8 +84,7 @@ const DARK_MAP_STYLE: google.maps.MapTypeStyle[] = [
   { featureType: 'transit.station', elementType: 'labels.text.fill', stylers: [{ color: '#1e4a7a' }] },
 ];
 
-// ── Sub-components ────────────────────────────────────────────────────────────
-
+// ── InfraRow ──────────────────────────────────────────────────────────────────
 function InfraRow({ icon: Icon, title, data }: {
   icon: React.ElementType;
   title: string;
@@ -99,69 +99,63 @@ function InfraRow({ icon: Icon, title, data }: {
         onClick={() => setOpen(v => !v)}
         className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-white/[0.03] transition-colors text-left"
       >
-        <div className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', style.dot)} />
-        <Icon className={cn('w-3.5 h-3.5 flex-shrink-0', style.text)} />
+        <div className={cn('w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 border', style.bg)}>
+          <Icon className={cn('w-3 h-3', style.text)} />
+        </div>
         <span className="text-xs flex-1 text-foreground/80">{title}</span>
-        <span className={cn('text-[10px] font-mono uppercase px-1.5 py-0.5 rounded border', style.bg)}>{sev}</span>
-        <ChevronDown className={cn('w-3 h-3 text-muted-foreground/50 transition-transform', open && 'rotate-180')} />
+        <div className="flex items-center gap-1.5">
+          <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', style.dot)} />
+          <span className={cn('text-[10px] font-mono capitalize', style.text)}>{sev}</span>
+          {open ? <ChevronUp className="w-3 h-3 text-muted-foreground/30" /> : <ChevronDown className="w-3 h-3 text-muted-foreground/30" />}
+        </div>
       </button>
       {open && (
-        <div className="px-3 pb-3 pt-1 space-y-1.5 text-xs border-t border-border/30">
-          {!!data.details && <p className="text-muted-foreground leading-relaxed">{String(data.details)}</p>}
-          {!!data.estimatedOutages && <p className="text-foreground/70">Outages: <span className="text-amber-400">{String(data.estimatedOutages)}</span></p>}
-          {data.restorationDays !== undefined && <p className="text-foreground/70">Restoration: <span className="text-foreground">{String(data.restorationDays)} days</span></p>}
-          {(data.closures as string[] | undefined)?.map((c, i) => (
-            <p key={i} className="text-foreground/60 flex items-start gap-1"><span className="text-orange-400/70 mt-0.5 flex-shrink-0">›</span><span>{c}</span></p>
-          ))}
-          {(data.atRisk as string[] | undefined)?.map((a, i) => (
-            <p key={i} className="text-foreground/60 flex items-start gap-1"><span className="text-amber-400/70 mt-0.5 flex-shrink-0">›</span><span>{a}</span></p>
-          ))}
+        <div className="px-3 pb-3 space-y-1.5 border-t border-white/[0.06]">
+          {!!data.description && <p className="text-[11px] text-foreground/60 leading-relaxed pt-2">{String(data.description)}</p>}
+          {!!data.outageEstimate && <p className="text-[10px] text-muted-foreground/50">Outage: <span className="text-foreground/60">{String(data.outageEstimate)}</span></p>}
+          {!!data.specificClosures && <p className="text-[10px] text-muted-foreground/50">Closures: <span className="text-foreground/60">{String(data.specificClosures)}</span></p>}
         </div>
       )}
     </div>
   );
 }
 
-// Intensity timeline showing each waypoint's estimated category
+// ── IntensityTimeline ─────────────────────────────────────────────────────────
 function IntensityTimeline({ track, category, stormType }: {
   track: TrackPoint[];
   category: number;
   stormType: string;
 }) {
-  if (track.length < 2 || stormType !== 'hurricane') return null;
-
-  // Simulate intensity along track: peaks at ~60% then weakens on land
+  if (track.length < 2) return null;
+  const TAMPA_BAY_COAST = { lat: 27.9, lng: -82.55 };
+  function isNearLand(pt: TrackPoint) {
+    return pt.lat > TAMPA_BAY_COAST.lat - 0.3 && pt.lng > TAMPA_BAY_COAST.lng - 0.3;
+  }
   const points = track.map((pt, i) => {
-    const progress = i / (track.length - 1);
-    const onLand = pt.lat > 27.5 && pt.lng > -82.6;
-    const decay = onLand ? Math.max(0.3, 1 - (progress - 0.55) * 1.8) : 1;
-    const intensify = progress < 0.5 ? 1 + progress * 0.4 : 1 + (1 - progress) * 0.2;
-    const cat = Math.max(1, Math.min(5, Math.round(category * decay * intensify)));
-    return { pt, cat, onLand, progress };
+    const progress = track.length > 1 ? i / (track.length - 1) : 0;
+    const onLand = isNearLand(pt);
+    const landDecay = onLand ? Math.max(0.4, 1 - progress * 0.6) : 1;
+    const cat = stormType === 'hurricane' ? Math.max(1, Math.round(category * landDecay)) : 0;
+    return { cat, onLand, progress };
   });
 
   return (
-    <div className="bg-[#0a1628]/80 border border-white/[0.06] rounded-xl p-3">
-      <p className="text-[11px] text-muted-foreground uppercase font-mono mb-3">Intensity Timeline</p>
-      <div className="flex items-end gap-1.5 h-16 relative">
+    <div className="space-y-1.5">
+      <label className="text-[10px] text-muted-foreground/60 uppercase font-mono tracking-wider">Intensity Timeline</label>
+      <div className="flex items-end gap-0.5 h-10 bg-white/[0.02] rounded-lg px-2 py-1.5">
         {points.map((p, i) => {
-          const prev = i > 0 ? points[i - 1].cat : p.cat;
-          const trend = p.cat > prev ? 'up' : p.cat < prev ? 'down' : 'flat';
           const catColor = CAT_COLORS[p.cat]?.track ?? '#94a3b8';
-          const barH = (p.cat / 5) * 100;
+          const barH = p.onLand ? 20 + p.cat * 8 : 20 + p.cat * 14;
+          const trend = i === 0 ? 'flat' : (p.cat > points[i - 1].cat ? 'up' : p.cat < points[i - 1].cat ? 'down' : 'flat');
           return (
-            <div key={i} className="flex-1 flex flex-col items-center gap-0.5 relative group">
-              {/* Trend arrow */}
-              <div className="absolute -top-4 flex items-center justify-center w-full">
-                {trend === 'up' && <TrendingUp className="w-2.5 h-2.5 text-red-400" />}
-                {trend === 'down' && <TrendingDown className="w-2.5 h-2.5 text-emerald-400" />}
-                {trend === 'flat' && <Minus className="w-2.5 h-2.5 text-muted-foreground/40" />}
+            <div key={i} className="flex-1 flex flex-col items-center justify-end gap-0.5 relative group cursor-default">
+              <div className="flex items-center gap-0.5">
+                {trend === 'up' && <TrendingUp className="w-2 h-2 text-red-400" />}
+                {trend === 'down' && <TrendingDown className="w-2 h-2 text-emerald-400" />}
+                {trend === 'flat' && <Minus className="w-2 h-2 text-muted-foreground/40" />}
               </div>
-              {/* Bar */}
               <div className="w-full rounded-sm transition-all" style={{ height: `${barH}%`, background: catColor, opacity: p.onLand ? 0.5 : 0.85 }} />
-              {/* Label */}
-              <span className="text-[8px] font-mono" style={{ color: catColor }}>{p.onLand ? '⚡' : `C${p.cat}`}</span>
-              {/* Tooltip */}
+              <span className="text-[7px] font-mono" style={{ color: catColor }}>{p.onLand ? '⚡' : `C${p.cat}`}</span>
               <div className="absolute bottom-full mb-6 left-1/2 -translate-x-1/2 bg-black/90 border border-white/10 rounded px-2 py-1 text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                 <span className="font-mono" style={{ color: catColor }}>Waypoint {i + 1}</span>
                 <br />
@@ -171,7 +165,7 @@ function IntensityTimeline({ track, category, stormType }: {
           );
         })}
       </div>
-      <div className="flex items-center justify-between mt-2 text-[10px] text-muted-foreground/50 font-mono">
+      <div className="flex items-center justify-between text-[9px] text-muted-foreground/40 font-mono px-1">
         <span>Origin</span>
         <span>Landfall</span>
       </div>
@@ -179,8 +173,365 @@ function IntensityTimeline({ track, category, stormType }: {
   );
 }
 
+// ── ConfigPanel ───────────────────────────────────────────────────────────────
+function ConfigPanel({
+  params, setParams, isDrawing, track, simStatus,
+  startDrawing, stopDrawing, resetTrack, runSimulation, onUndo,
+}: {
+  params: StormParams;
+  setParams: React.Dispatch<React.SetStateAction<StormParams>>;
+  isDrawing: boolean;
+  track: TrackPoint[];
+  simStatus: SimStatus;
+  startDrawing: () => void;
+  stopDrawing: () => void;
+  resetTrack: () => void;
+  runSimulation: () => void;
+  onUndo: () => void;
+}) {
+  const catColor = CAT_COLORS[params.category]?.track ?? '#94a3b8';
+  return (
+    <div className="flex-1 overflow-y-auto p-3 space-y-4">
+      {/* Name */}
+      <div className="space-y-1.5">
+        <label className="text-[10px] text-muted-foreground/60 uppercase font-mono tracking-wider">Storm Name</label>
+        <input
+          type="text"
+          value={params.name}
+          onChange={e => setParams(p => ({ ...p, name: e.target.value }))}
+          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-cyan-400/40 transition-colors"
+        />
+      </div>
+
+      {/* Type */}
+      <div className="space-y-1.5">
+        <label className="text-[10px] text-muted-foreground/60 uppercase font-mono tracking-wider">Type</label>
+        <div className="grid grid-cols-2 gap-1">
+          {STORM_TYPES.map(({ value, label, icon }) => (
+            <button
+              key={value}
+              onClick={() => setParams(p => ({ ...p, stormType: value }))}
+              className={cn(
+                'flex items-center gap-1.5 text-[11px] py-1.5 px-2 rounded-lg border transition-all',
+                params.stormType === value
+                  ? 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20'
+                  : 'text-muted-foreground/50 border-white/[0.06] hover:bg-white/[0.04]'
+              )}
+            >
+              <span className="text-xs">{icon}</span>
+              <span className="truncate">{label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Category */}
+      {params.stormType === 'hurricane' && (
+        <div className="space-y-1.5">
+          <label className="text-[10px] text-muted-foreground/60 uppercase font-mono tracking-wider flex justify-between">
+            <span>Category</span>
+            <span style={{ color: catColor }}>{CAT_COLORS[params.category]?.label}</span>
+          </label>
+          <div className="flex gap-1">
+            {[1,2,3,4,5].map(cat => (
+              <button
+                key={cat}
+                onClick={() => setParams(p => ({ ...p, category: cat }))}
+                className="flex-1 py-1.5 text-xs font-bold rounded-lg border transition-all"
+                style={params.category === cat
+                  ? { background: CAT_COLORS[cat]?.track, color: '#000', borderColor: 'transparent' }
+                  : { color: CAT_COLORS[cat]?.track, borderColor: CAT_COLORS[cat]?.track + '30', background: CAT_COLORS[cat]?.fill }
+                }
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Sliders */}
+      {[
+        { key: 'windSpeedKph', label: 'Wind Speed', unit: 'km/h', min: 50, max: 350, step: 5 },
+        { key: 'radiusKm', label: 'Wind Radius', unit: 'km', min: 20, max: 300, step: 10 },
+        { key: 'forwardSpeedKph', label: 'Forward Speed', unit: 'km/h', min: 5, max: 80, step: 1 },
+      ].map(({ key, label, unit, min, max, step }) => (
+        <div key={key} className="space-y-1.5">
+          <label className="text-[10px] text-muted-foreground/60 uppercase font-mono tracking-wider flex justify-between">
+            <span>{label}</span>
+            <span className="text-foreground/70">{params[key as keyof StormParams]} {unit}</span>
+          </label>
+          <input
+            type="range" min={min} max={max} step={step}
+            value={params[key as keyof StormParams] as number}
+            onChange={e => setParams(p => ({ ...p, [key]: +e.target.value }))}
+            className="w-full h-1 rounded-full appearance-none bg-white/10 accent-cyan-400"
+          />
+        </div>
+      ))}
+
+      {/* Track controls */}
+      <div className="space-y-2 pt-1">
+        <label className="text-[10px] text-muted-foreground/60 uppercase font-mono tracking-wider flex justify-between">
+          <span>Storm Track</span>
+          <span className={cn('font-mono', isDrawing ? 'text-cyan-400 animate-pulse' : 'text-muted-foreground/40')}>
+            {track.length} pt{track.length !== 1 ? 's' : ''}
+          </span>
+        </label>
+
+        {!isDrawing ? (
+          <button
+            onClick={startDrawing}
+            disabled={simStatus === 'analyzing'}
+            className="w-full flex items-center justify-center gap-2 text-xs py-2.5 rounded-lg border text-cyan-400 bg-cyan-400/[0.08] border-cyan-400/20 hover:bg-cyan-400/15 transition-all disabled:opacity-40"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            {track.length === 0 ? 'Start Drawing Track' : 'Add More Points'}
+          </button>
+        ) : (
+          <button
+            onClick={stopDrawing}
+            className="w-full flex items-center justify-center gap-2 text-xs py-2.5 rounded-lg border text-amber-400 bg-amber-400/[0.08] border-amber-400/20 hover:bg-amber-400/15 transition-all animate-pulse"
+          >
+            <Square className="w-3.5 h-3.5 fill-amber-400" />
+            Stop Drawing · {track.length} points
+          </button>
+        )}
+
+        {isDrawing && (
+          <p className="text-[10px] text-cyan-400/60 text-center">Click map to add waypoints — keep clicking</p>
+        )}
+
+        {track.length > 0 && (
+          <div className="flex gap-1.5">
+            <button
+              onClick={onUndo}
+              disabled={isDrawing}
+              className="flex-1 flex items-center justify-center gap-1 text-[11px] py-1.5 rounded-lg border text-muted-foreground/50 border-white/[0.06] hover:bg-white/[0.03] disabled:opacity-30 transition-all"
+            >
+              <Trash2 className="w-3 h-3" />Undo
+            </button>
+            <button
+              onClick={resetTrack}
+              className="flex-1 flex items-center justify-center gap-1 text-[11px] py-1.5 rounded-lg border text-red-400/70 border-red-400/15 hover:bg-red-400/[0.06] transition-all"
+            >
+              <RotateCcw className="w-3 h-3" />Reset
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Intensity timeline */}
+      <IntensityTimeline track={track} category={params.category} stormType={params.stormType} />
+
+      {/* Run button */}
+      <button
+        onClick={runSimulation}
+        disabled={track.length < 2 || simStatus === 'analyzing' || isDrawing}
+        className={cn(
+          'w-full flex items-center justify-center gap-2 text-sm py-3 rounded-xl font-medium transition-all',
+          track.length >= 2 && simStatus !== 'analyzing' && !isDrawing
+            ? 'text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-lg shadow-cyan-500/20'
+            : 'text-muted-foreground/30 bg-white/[0.03] border border-white/[0.06] cursor-not-allowed'
+        )}
+      >
+        {simStatus === 'analyzing'
+          ? <><Loader2 className="w-4 h-4 animate-spin" />Analyzing…</>
+          : <><Play className="w-4 h-4" />Run Impact Analysis</>
+        }
+      </button>
+
+      {track.length < 2 && !isDrawing && (
+        <p className="text-[10px] text-muted-foreground/40 text-center">Add ≥ 2 waypoints to run analysis</p>
+      )}
+    </div>
+  );
+}
+
+// ── AnalysisContent ───────────────────────────────────────────────────────────
+function AnalysisContent({ simStatus, analysis, params }: {
+  simStatus: SimStatus;
+  analysis: Record<string, unknown> | null;
+  params: StormParams;
+}) {
+  const infra = (analysis?.infrastructureImpacts as Record<string, unknown>) ?? {};
+  const evac = (analysis?.evacuationZones as Record<string, unknown>) ?? {};
+  const shelter = (analysis?.shelterDemand as Record<string, unknown>) ?? {};
+  const surge = (analysis?.stormSurge as Record<string, unknown>) ?? {};
+  const econ = (analysis?.economicImpact as Record<string, unknown>) ?? {};
+  const agentRecs = (analysis?.agentRecommendations as Record<string, string>) ?? {};
+  const actions = (analysis?.immediateActions as string[]) ?? [];
+
+  if (simStatus === 'idle') return (
+    <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
+      <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center">
+        <Wind className="w-6 h-6 text-muted-foreground/20" />
+      </div>
+      <p className="text-xs text-muted-foreground/40 max-w-48 leading-relaxed">
+        Plot a storm track on the map, configure parameters, then run AI analysis
+      </p>
+    </div>
+  );
+
+  if (simStatus === 'analyzing') return (
+    <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
+      <div className="relative">
+        <div className="w-14 h-14 rounded-full border-2 border-cyan-400/20 animate-ping absolute inset-0" />
+        <div className="w-14 h-14 rounded-full bg-cyan-400/10 border border-cyan-400/30 flex items-center justify-center relative">
+          <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
+        </div>
+      </div>
+      <div>
+        <p className="text-sm font-medium text-foreground/80">Analyzing Impact</p>
+        <p className="text-xs text-muted-foreground/40 mt-1">Modeling infrastructure, evacuation zones, and resource demands</p>
+      </div>
+    </div>
+  );
+
+  if (simStatus === 'error') return (
+    <div className="bg-red-400/5 border border-red-400/15 rounded-xl p-4 text-center">
+      <AlertTriangle className="w-6 h-6 text-red-400/60 mx-auto mb-2" />
+      <p className="text-xs text-red-400/80">Analysis failed. Please try again.</p>
+    </div>
+  );
+
+  if (!analysis) return null;
+
+  return (
+    <div className="space-y-3">
+      {/* Threat level */}
+      <div className={cn('rounded-xl p-4 border', THREAT_STYLE[(analysis.threatLevel as string) ?? 'MODERATE'])}>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[10px] font-mono uppercase tracking-wider opacity-60">Threat Level</span>
+          <span className="text-base font-bold tracking-tight">{analysis.threatLevel as string}</span>
+        </div>
+        <p className="text-xs leading-relaxed opacity-80">{analysis.summary as string}</p>
+      </div>
+
+      {/* Key stats */}
+      <div className="grid grid-cols-2 gap-2">
+        {[
+          { icon: Users, label: 'At Risk', value: `${((analysis.affectedPopulation as number ?? 0) / 1000).toFixed(0)}k`, color: 'text-amber-400', bg: 'bg-amber-400/10' },
+          { icon: Waves, label: 'Max Surge', value: `${(surge.maxSurgeMeters as number)?.toFixed(1) ?? '?'}m`, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+          { icon: DollarSign, label: 'Damage Est.', value: (econ.estimatedDamageUSD as string) ?? '?', color: 'text-red-400', bg: 'bg-red-400/10' },
+          { icon: Clock, label: 'Recovery', value: `${(econ.recoveryMonths as number) ?? '?'} mo`, color: 'text-purple-400', bg: 'bg-purple-400/10' },
+        ].map(({ icon: Icon, label, value, color, bg }) => (
+          <div key={label} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
+            <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center mb-2', bg)}>
+              <Icon className={cn('w-3.5 h-3.5', color)} />
+            </div>
+            <p className="text-sm font-semibold text-foreground/90">{value}</p>
+            <p className="text-[10px] text-muted-foreground/50 mt-0.5">{label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Infrastructure */}
+      <div>
+        <p className="text-[10px] text-muted-foreground/50 uppercase font-mono tracking-wider mb-2">Infrastructure</p>
+        <div className="space-y-1">
+          <InfraRow icon={Zap} title="Power Grid" data={(infra.power as Record<string, unknown>) ?? {}} />
+          <InfraRow icon={Car} title="Roads & Highways" data={(infra.roads as Record<string, unknown>) ?? {}} />
+          <InfraRow icon={Building2} title="Bridges" data={(infra.bridges as Record<string, unknown>) ?? {}} />
+          <InfraRow icon={Plane} title="Airport" data={(infra.airports as Record<string, unknown>) ?? {}} />
+          <InfraRow icon={Ship} title="Port Tampa Bay" data={(infra.port as Record<string, unknown>) ?? {}} />
+          <InfraRow icon={Hospital} title="Hospitals" data={(infra.hospitals as Record<string, unknown>) ?? {}} />
+          <InfraRow icon={Radio} title="Communications" data={(infra.communications as Record<string, unknown>) ?? {}} />
+          <InfraRow icon={Droplets} title="Water & Sewer" data={(infra.waterSewer as Record<string, unknown>) ?? {}} />
+        </div>
+      </div>
+
+      {/* Evacuation */}
+      <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
+        <p className="text-xs font-medium mb-3 flex items-center gap-2">
+          <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+          Evacuation Zones
+        </p>
+        <div className="space-y-2.5">
+          {((evac.mandatory as string[]) ?? []).map((z, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <span className="text-[10px] font-mono text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5">MANDATORY</span>
+              <span className="text-xs text-foreground/70 leading-relaxed">{z}</span>
+            </div>
+          ))}
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/[0.06] text-xs">
+            <div>
+              <p className="text-[10px] text-muted-foreground/40">Evacuees</p>
+              <p className="font-medium text-foreground/80">{(((evac.estimatedEvacuees as number) ?? 0) / 1000).toFixed(0)}k</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground/40">Lead Time</p>
+              <p className="font-medium text-amber-400">{evac.timeToEvacuate as string}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Shelter demand */}
+      {!!(shelter.estimatedShelterNeeds) && (
+        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
+          <p className="text-xs font-medium mb-2 flex items-center gap-2">
+            <Building2 className="w-3.5 h-3.5 text-blue-400" />
+            Shelter Demand
+          </p>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <p className="text-[10px] text-muted-foreground/40">Total Need</p>
+              <p className="font-medium">{(((shelter.estimatedShelterNeeds as number) ?? 0) / 1000).toFixed(0)}k</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground/40">Special Needs</p>
+              <p className="font-medium text-amber-400">{(((shelter.specialNeedsCount as number) ?? 0) / 1000).toFixed(0)}k</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Immediate actions */}
+      {actions.length > 0 && (
+        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
+          <p className="text-xs font-medium mb-2 flex items-center gap-2">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+            Immediate Actions
+          </p>
+          <ol className="space-y-2">
+            {actions.map((a, i) => (
+              <li key={i} className="flex items-start gap-2 text-xs">
+                <span className="text-[10px] font-mono text-cyan-400 bg-cyan-400/10 px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5">{i + 1}</span>
+                <span className="text-foreground/70 leading-relaxed">{a}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+
+      {/* Agent recommendations */}
+      {Object.keys(agentRecs).length > 0 && (
+        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
+          <p className="text-xs font-medium mb-2 text-muted-foreground/60">Agent Recommendations</p>
+          <div className="space-y-2.5">
+            {[
+              { key: 'stormWatcher', icon: '🌀', label: 'Storm Watcher' },
+              { key: 'vulnerabilityMapper', icon: '🗺️', label: 'Vulnerability Mapper' },
+              { key: 'resourceCoordinator', icon: '📦', label: 'Resource Coordinator' },
+              { key: 'alertCommander', icon: '🚨', label: 'Alert Commander' },
+            ].map(({ key, icon, label }) => agentRecs[key] ? (
+              <div key={key}>
+                <p className="text-[10px] text-muted-foreground/40 mb-0.5">{icon} {label}</p>
+                <p className="text-xs text-foreground/65 leading-relaxed">{agentRecs[key]}</p>
+              </div>
+            ) : null)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function StormSimulator() {
+  // KEY FIX: store map in state so HurricaneMapOverlay re-renders when map is ready
+  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
   const polylineRef = useRef<google.maps.Polyline | null>(null);
@@ -202,6 +553,7 @@ export default function StormSimulator() {
   const [showHistory, setShowHistory] = useState(false);
   const [selectedSimId, setSelectedSimId] = useState<string | null>(null);
   const [overlayActive, setOverlayActive] = useState(true);
+  const [mobileTab, setMobileTab] = useState<MobileTab | null>(null);
 
   const createSim = trpc.simulator.create.useMutation();
   const { data: history, refetch: refetchHistory } = trpc.simulator.list.useQuery({ limit: 10 });
@@ -210,8 +562,6 @@ export default function StormSimulator() {
     { enabled: !!selectedSimId }
   );
   const deleteSim = trpc.simulator.delete.useMutation({ onSuccess: () => refetchHistory() });
-
-  // ── Map helpers ──────────────────────────────────────────────────────────────
 
   const trackColor = useCallback(() => {
     if (params.stormType === 'hurricane') return CAT_COLORS[params.category]?.track ?? '#ef4444';
@@ -223,15 +573,12 @@ export default function StormSimulator() {
   const renderTrack = useCallback((pts: TrackPoint[]) => {
     if (!mapRef.current) return;
     const color = trackColor();
-
-    // Clear old
     markersRef.current.forEach(m => { m.map = null; });
     markersRef.current = [];
     if (polylineRef.current) { polylineRef.current.setMap(null); polylineRef.current = null; }
     circlesRef.current.forEach(c => c.setMap(null));
     circlesRef.current = [];
 
-    // Polyline with arrows
     if (pts.length >= 2) {
       polylineRef.current = new window.google.maps.Polyline({
         path: pts,
@@ -246,8 +593,6 @@ export default function StormSimulator() {
           repeat: '70px',
         }],
       });
-
-      // Wind radius circles at origin + landfall
       [pts[0], pts[pts.length - 1]].forEach(pt => {
         const c = new window.google.maps.Circle({
           center: pt,
@@ -263,7 +608,6 @@ export default function StormSimulator() {
       });
     }
 
-    // Markers
     pts.forEach((pt, i) => {
       const isFirst = i === 0;
       const isLast = i === pts.length - 1;
@@ -287,12 +631,11 @@ export default function StormSimulator() {
     });
   }, [trackColor, params.radiusKm]);
 
-  // Re-render when params change
   useEffect(() => {
     if (track.length > 0) renderTrack(track);
   }, [params.category, params.stormType, params.radiusKm, renderTrack, track]);
 
-  // ── Apply dark map style when map is ready ────────────────────────────────────
+  // KEY FIX: store map in both ref AND state so overlay component re-renders
   const onMapReady = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
     map.setOptions({
@@ -302,12 +645,13 @@ export default function StormSimulator() {
       fullscreenControl: false,
       zoomControlOptions: { position: window.google.maps.ControlPosition.RIGHT_BOTTOM },
     });
+    setMapInstance(map);
   }, []);
 
-  // ── Drawing mode ──────────────────────────────────────────────────────────────
   const startDrawing = useCallback(() => {
     if (!mapRef.current || isDrawing) return;
     setIsDrawing(true);
+    setMobileTab(null); // close sheet so map is visible on mobile
     mapRef.current.setOptions({ draggableCursor: 'crosshair' });
     clickListenerRef.current = mapRef.current.addListener('click', (e: google.maps.MapMouseEvent) => {
       if (!e.latLng) return;
@@ -343,17 +687,25 @@ export default function StormSimulator() {
     setSelectedSimId(null);
   }, [stopDrawing]);
 
+  const handleUndo = useCallback(() => {
+    setTrack(prev => {
+      const next = prev.slice(0, -1);
+      renderTrack(next);
+      return next;
+    });
+  }, [renderTrack]);
+
   useEffect(() => () => {
     if (clickListenerRef.current) window.google.maps.event.removeListener(clickListenerRef.current);
   }, []);
 
-  // ── Run simulation ────────────────────────────────────────────────────────────
   const runSimulation = useCallback(async () => {
     if (track.length < 2 || simStatus === 'analyzing') return;
     stopDrawing();
     setSimStatus('analyzing');
     setAnalysis(null);
     setSelectedSimId(null);
+    setMobileTab('analysis'); // show analysis on mobile
     try {
       const result = await createSim.mutateAsync({
         name: params.name,
@@ -377,7 +729,6 @@ export default function StormSimulator() {
     }
   }, [track, params, simStatus, stopDrawing, createSim, refetchHistory]);
 
-  // ── Load historical simulation ────────────────────────────────────────────────
   useEffect(() => {
     if (!selectedSim || !mapRef.current) return;
     const pts = selectedSim.track as TrackPoint[];
@@ -393,22 +744,19 @@ export default function StormSimulator() {
     }
   }, [selectedSim, renderTrack]);
 
-  // ── Derived analysis data ─────────────────────────────────────────────────────
-  const infra = (analysis?.infrastructureImpacts as Record<string, unknown>) ?? {};
-  const evac = (analysis?.evacuationZones as Record<string, unknown>) ?? {};
-  const shelter = (analysis?.shelterDemand as Record<string, unknown>) ?? {};
-  const surge = (analysis?.stormSurge as Record<string, unknown>) ?? {};
-  const econ = (analysis?.economicImpact as Record<string, unknown>) ?? {};
-  const agentRecs = (analysis?.agentRecommendations as Record<string, string>) ?? {};
-  const actions = (analysis?.immediateActions as string[]) ?? [];
-
   const catColor = CAT_COLORS[params.category]?.track ?? '#94a3b8';
 
-  return (
-    <div className="flex h-full min-h-0 overflow-hidden bg-[#020b18]">
+  const configPanelProps = {
+    params, setParams, isDrawing, track, simStatus,
+    startDrawing, stopDrawing, resetTrack, runSimulation,
+    onUndo: handleUndo,
+  };
 
-      {/* ── Left: Config panel ── */}
-      <div className="w-64 flex-shrink-0 border-r border-white/[0.06] flex flex-col overflow-hidden bg-[#040f1e]">
+  return (
+    <div className="flex flex-col lg:flex-row h-full min-h-0 overflow-hidden bg-[#020b18]">
+
+      {/* ── Desktop Left: Config panel ── */}
+      <div className="hidden lg:flex w-64 flex-shrink-0 border-r border-white/[0.06] flex-col overflow-hidden bg-[#040f1e]">
         <div className="p-4 border-b border-white/[0.06]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -423,175 +771,23 @@ export default function StormSimulator() {
             </button>
           </div>
         </div>
-
-        <div className="flex-1 overflow-y-auto p-3 space-y-4">
-          {/* Name */}
-          <div className="space-y-1.5">
-            <label className="text-[10px] text-muted-foreground/60 uppercase font-mono tracking-wider">Storm Name</label>
-            <input
-              type="text"
-              value={params.name}
-              onChange={e => setParams(p => ({ ...p, name: e.target.value }))}
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-cyan-400/40 transition-colors"
-            />
-          </div>
-
-          {/* Type */}
-          <div className="space-y-1.5">
-            <label className="text-[10px] text-muted-foreground/60 uppercase font-mono tracking-wider">Type</label>
-            <div className="grid grid-cols-2 gap-1">
-              {STORM_TYPES.map(({ value, label, icon }) => (
-                <button
-                  key={value}
-                  onClick={() => setParams(p => ({ ...p, stormType: value }))}
-                  className={cn(
-                    'flex items-center gap-1.5 text-[11px] py-1.5 px-2 rounded-lg border transition-all',
-                    params.stormType === value
-                      ? 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20'
-                      : 'text-muted-foreground/50 border-white/[0.06] hover:bg-white/[0.04]'
-                  )}
-                >
-                  <span className="text-xs">{icon}</span>
-                  <span className="truncate">{label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Category */}
-          {params.stormType === 'hurricane' && (
-            <div className="space-y-1.5">
-              <label className="text-[10px] text-muted-foreground/60 uppercase font-mono tracking-wider flex justify-between">
-                <span>Category</span>
-                <span style={{ color: catColor }}>{CAT_COLORS[params.category]?.label}</span>
-              </label>
-              <div className="flex gap-1">
-                {[1,2,3,4,5].map(cat => (
-                  <button
-                    key={cat}
-                    onClick={() => setParams(p => ({ ...p, category: cat }))}
-                    className={cn('flex-1 py-1.5 text-xs font-bold rounded-lg border transition-all')}
-                    style={params.category === cat
-                      ? { background: CAT_COLORS[cat]?.track, color: '#000', borderColor: 'transparent' }
-                      : { color: CAT_COLORS[cat]?.track, borderColor: CAT_COLORS[cat]?.track + '30', background: CAT_COLORS[cat]?.fill }
-                    }
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Sliders */}
-          {[
-            { key: 'windSpeedKph', label: 'Wind Speed', unit: 'km/h', min: 50, max: 350, step: 5 },
-            { key: 'radiusKm', label: 'Wind Radius', unit: 'km', min: 20, max: 300, step: 10 },
-            { key: 'forwardSpeedKph', label: 'Forward Speed', unit: 'km/h', min: 5, max: 80, step: 1 },
-          ].map(({ key, label, unit, min, max, step }) => (
-            <div key={key} className="space-y-1.5">
-              <label className="text-[10px] text-muted-foreground/60 uppercase font-mono tracking-wider flex justify-between">
-                <span>{label}</span>
-                <span className="text-foreground/70">{params[key as keyof StormParams]} {unit}</span>
-              </label>
-              <input
-                type="range" min={min} max={max} step={step}
-                value={params[key as keyof StormParams] as number}
-                onChange={e => setParams(p => ({ ...p, [key]: +e.target.value }))}
-                className="w-full h-1 rounded-full appearance-none bg-white/10 accent-cyan-400"
-              />
-            </div>
-          ))}
-
-          {/* Track controls */}
-          <div className="space-y-2 pt-1">
-            <label className="text-[10px] text-muted-foreground/60 uppercase font-mono tracking-wider flex justify-between">
-              <span>Storm Track</span>
-              <span className={cn('font-mono', isDrawing ? 'text-cyan-400 animate-pulse' : 'text-muted-foreground/40')}>
-                {track.length} pt{track.length !== 1 ? 's' : ''}
-              </span>
-            </label>
-
-            {!isDrawing ? (
-              <button
-                onClick={startDrawing}
-                disabled={simStatus === 'analyzing'}
-                className="w-full flex items-center justify-center gap-2 text-xs py-2 rounded-lg border text-cyan-400 bg-cyan-400/[0.08] border-cyan-400/20 hover:bg-cyan-400/15 transition-all disabled:opacity-40"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                {track.length === 0 ? 'Start Drawing Track' : 'Add More Points'}
-              </button>
-            ) : (
-              <button
-                onClick={stopDrawing}
-                className="w-full flex items-center justify-center gap-2 text-xs py-2 rounded-lg border text-amber-400 bg-amber-400/[0.08] border-amber-400/20 hover:bg-amber-400/15 transition-all animate-pulse"
-              >
-                <Square className="w-3.5 h-3.5 fill-amber-400" />
-                Stop Drawing · {track.length} points
-              </button>
-            )}
-
-            {isDrawing && (
-              <p className="text-[10px] text-cyan-400/60 text-center">Click map to add waypoints — keep clicking</p>
-            )}
-
-            {track.length > 0 && (
-              <div className="flex gap-1.5">
-                <button
-                  onClick={() => setTrack(prev => { const next = prev.slice(0, -1); renderTrack(next); return next; })}
-                  disabled={isDrawing}
-                  className="flex-1 flex items-center justify-center gap-1 text-[11px] py-1.5 rounded-lg border text-muted-foreground/50 border-white/[0.06] hover:bg-white/[0.03] disabled:opacity-30 transition-all"
-                >
-                  <Trash2 className="w-3 h-3" />Undo
-                </button>
-                <button
-                  onClick={resetTrack}
-                  className="flex-1 flex items-center justify-center gap-1 text-[11px] py-1.5 rounded-lg border text-red-400/70 border-red-400/15 hover:bg-red-400/[0.06] transition-all"
-                >
-                  <RotateCcw className="w-3 h-3" />Reset
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Intensity timeline */}
-          <IntensityTimeline track={track} category={params.category} stormType={params.stormType} />
-
-          {/* Run button */}
-          <button
-            onClick={runSimulation}
-            disabled={track.length < 2 || simStatus === 'analyzing' || isDrawing}
-            className={cn(
-              'w-full flex items-center justify-center gap-2 text-sm py-2.5 rounded-xl font-medium transition-all',
-              track.length >= 2 && simStatus !== 'analyzing' && !isDrawing
-                ? 'text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-lg shadow-cyan-500/20'
-                : 'text-muted-foreground/30 bg-white/[0.03] border border-white/[0.06] cursor-not-allowed'
-            )}
-          >
-            {simStatus === 'analyzing'
-              ? <><Loader2 className="w-4 h-4 animate-spin" />Analyzing…</>
-              : <><Play className="w-4 h-4" />Run Impact Analysis</>
-            }
-          </button>
-
-          {track.length < 2 && !isDrawing && (
-            <p className="text-[10px] text-muted-foreground/40 text-center">Add ≥ 2 waypoints to run analysis</p>
-          )}
-        </div>
+        <ConfigPanel {...configPanelProps} />
       </div>
 
       {/* ── Center: Map ── */}
-      <div className="flex-1 relative min-w-0">
-        <MapView
-          className="w-full h-full"
-          initialCenter={{ lat: 27.9506, lng: -82.4572 }}
-          initialZoom={8}
-          onMapReady={onMapReady}
-        />
+      <div className="flex-1 relative min-w-0" style={{ minHeight: 0 }}>
+        <div className="absolute inset-0 lg:bottom-0" style={{ bottom: '56px' }}>
+          <MapView
+            className="w-full h-full"
+            initialCenter={{ lat: 27.9506, lng: -82.4572 }}
+            initialZoom={8}
+            onMapReady={onMapReady}
+          />
+        </div>
 
-        {/* Hurricane vortex overlay on the map */}
+        {/* Vortex overlay — uses mapInstance (state) not mapRef.current (ref) */}
         <HurricaneMapOverlay
-          map={mapRef.current}
+          map={mapInstance}
           track={track}
           category={params.category}
           stormType={params.stormType}
@@ -602,7 +798,7 @@ export default function StormSimulator() {
 
         {/* Drawing banner */}
         {isDrawing && (
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-md border border-cyan-400/30 rounded-xl px-4 py-2 flex items-center gap-3 text-xs pointer-events-none">
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-md border border-cyan-400/30 rounded-xl px-4 py-2 flex items-center gap-3 text-xs pointer-events-none z-20">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
             <span className="text-cyan-400 font-medium">Drawing Active</span>
             <span className="text-white/40">· {track.length} point{track.length !== 1 ? 's' : ''} placed</span>
@@ -611,7 +807,7 @@ export default function StormSimulator() {
 
         {/* Bottom-left: track info */}
         {track.length > 0 && !isDrawing && (
-          <div className="absolute bottom-4 left-3 bg-black/70 backdrop-blur-sm border border-white/[0.08] rounded-xl px-3 py-2 flex items-center gap-3 text-xs">
+          <div className="absolute bottom-16 lg:bottom-4 left-3 bg-black/70 backdrop-blur-sm border border-white/[0.08] rounded-xl px-3 py-2 flex items-center gap-3 text-xs z-10">
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: catColor }} />
             <span className="text-foreground/70">{track.length} waypoints</span>
             <ArrowRight className="w-3 h-3 text-muted-foreground/30" />
@@ -625,7 +821,7 @@ export default function StormSimulator() {
         <button
           onClick={() => setOverlayActive(v => !v)}
           className={cn(
-            'absolute bottom-4 right-3 flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-xl border backdrop-blur-sm transition-all',
+            'absolute bottom-16 lg:bottom-4 right-3 flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-xl border backdrop-blur-sm transition-all z-10',
             overlayActive
               ? 'bg-cyan-400/15 border-cyan-400/25 text-cyan-400'
               : 'bg-black/50 border-white/[0.08] text-white/40 hover:text-white/70'
@@ -635,8 +831,8 @@ export default function StormSimulator() {
         </button>
       </div>
 
-      {/* ── Right: Analysis panel ── */}
-      <div className="w-80 flex-shrink-0 border-l border-white/[0.06] flex flex-col overflow-hidden bg-[#040f1e]">
+      {/* ── Desktop Right: Analysis panel ── */}
+      <div className="hidden lg:flex w-80 flex-shrink-0 border-l border-white/[0.06] flex-col overflow-hidden bg-[#040f1e]">
         {showHistory ? (
           <>
             <div className="p-4 border-b border-white/[0.06] flex items-center justify-between">
@@ -667,7 +863,7 @@ export default function StormSimulator() {
                         {sim.stormType.replace(/_/g, ' ')} {sim.category ? `· Cat ${sim.category}` : ''} · {sim.windSpeedKph} km/h
                       </p>
                       {(sim.affectedPopulation ?? 0) > 0 && (
-                        <p className="text-[11px] text-amber-400/80 mt-0.5">{((sim.affectedPopulation ?? 0) / 1000).toFixed(0)}k at risk</p>
+                        <p className="text-[11px] text-amber-400/80 mt-0.5">{(((sim.affectedPopulation ?? 0)) / 1000).toFixed(0)}k at risk</p>
                       )}
                     </div>
                     <button
@@ -683,7 +879,6 @@ export default function StormSimulator() {
           </>
         ) : (
           <>
-            {/* Panel header */}
             <div className="p-4 border-b border-white/[0.06]">
               <p className="text-sm font-medium text-foreground/90">Impact Analysis</p>
               <p className="text-[11px] text-muted-foreground/40 mt-0.5">
@@ -693,178 +888,91 @@ export default function StormSimulator() {
                 {simStatus === 'error' && 'Analysis failed — try again'}
               </p>
             </div>
-
-            <div className="flex-1 overflow-y-auto p-3 space-y-3">
-              {/* Idle state */}
-              {simStatus === 'idle' && (
-                <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
-                  <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center">
-                    <Wind className="w-6 h-6 text-muted-foreground/20" />
-                  </div>
-                  <p className="text-xs text-muted-foreground/40 max-w-48 leading-relaxed">
-                    Plot a storm track on the map, configure parameters, then run AI analysis
-                  </p>
-                </div>
-              )}
-
-              {/* Analyzing */}
-              {simStatus === 'analyzing' && (
-                <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
-                  <div className="relative">
-                    <div className="w-14 h-14 rounded-full border-2 border-cyan-400/20 animate-ping absolute inset-0" />
-                    <div className="w-14 h-14 rounded-full bg-cyan-400/10 border border-cyan-400/30 flex items-center justify-center relative">
-                      <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground/80">Analyzing Impact</p>
-                    <p className="text-xs text-muted-foreground/40 mt-1">Modeling infrastructure, evacuation zones, and resource demands</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Error */}
-              {simStatus === 'error' && (
-                <div className="bg-red-400/5 border border-red-400/15 rounded-xl p-4 text-center">
-                  <AlertTriangle className="w-6 h-6 text-red-400/60 mx-auto mb-2" />
-                  <p className="text-xs text-red-400/80">Analysis failed. Please try again.</p>
-                </div>
-              )}
-
-              {/* Results */}
-              {simStatus === 'complete' && analysis && (
-                <>
-                  {/* Threat level */}
-                  <div className={cn('rounded-xl p-4 border', THREAT_STYLE[(analysis.threatLevel as string) ?? 'MODERATE'])}>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-mono uppercase tracking-wider opacity-60">Threat Level</span>
-                      <span className="text-base font-bold tracking-tight">{analysis.threatLevel as string}</span>
-                    </div>
-                    <p className="text-xs leading-relaxed opacity-80">{analysis.summary as string}</p>
-                  </div>
-
-                  {/* Key stats grid */}
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { icon: Users, label: 'At Risk', value: `${((analysis.affectedPopulation as number) / 1000).toFixed(0)}k`, color: 'text-amber-400', bg: 'bg-amber-400/10' },
-                      { icon: Waves, label: 'Max Surge', value: `${(surge.maxSurgeMeters as number)?.toFixed(1) ?? '?'}m`, color: 'text-blue-400', bg: 'bg-blue-400/10' },
-                      { icon: DollarSign, label: 'Damage Est.', value: econ.estimatedDamageUSD as string ?? '?', color: 'text-red-400', bg: 'bg-red-400/10' },
-                      { icon: Clock, label: 'Recovery', value: `${econ.recoveryMonths as number ?? '?'} mo`, color: 'text-purple-400', bg: 'bg-purple-400/10' },
-                    ].map(({ icon: Icon, label, value, color, bg }) => (
-                      <div key={label} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
-                        <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center mb-2', bg)}>
-                          <Icon className={cn('w-3.5 h-3.5', color)} />
-                        </div>
-                        <p className="text-sm font-semibold text-foreground/90">{value}</p>
-                        <p className="text-[10px] text-muted-foreground/50 mt-0.5">{label}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Infrastructure */}
-                  <div>
-                    <p className="text-[10px] text-muted-foreground/50 uppercase font-mono tracking-wider mb-2">Infrastructure</p>
-                    <div className="space-y-1">
-                      <InfraRow icon={Zap} title="Power Grid" data={infra.power as Record<string, unknown> ?? {}} />
-                      <InfraRow icon={Car} title="Roads & Highways" data={infra.roads as Record<string, unknown> ?? {}} />
-                      <InfraRow icon={Building2} title="Bridges" data={infra.bridges as Record<string, unknown> ?? {}} />
-                      <InfraRow icon={Plane} title="Airport" data={infra.airports as Record<string, unknown> ?? {}} />
-                      <InfraRow icon={Ship} title="Port Tampa Bay" data={infra.port as Record<string, unknown> ?? {}} />
-                      <InfraRow icon={Hospital} title="Hospitals" data={infra.hospitals as Record<string, unknown> ?? {}} />
-                      <InfraRow icon={Radio} title="Communications" data={infra.communications as Record<string, unknown> ?? {}} />
-                      <InfraRow icon={Droplets} title="Water & Sewer" data={infra.waterSewer as Record<string, unknown> ?? {}} />
-                    </div>
-                  </div>
-
-                  {/* Evacuation */}
-                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
-                    <p className="text-xs font-medium mb-3 flex items-center gap-2">
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-                      Evacuation Zones
-                    </p>
-                    <div className="space-y-2.5">
-                      {(evac.mandatory as string[] ?? []).map((z, i) => (
-                        <div key={i} className="flex items-start gap-2">
-                          <span className="text-[10px] font-mono text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5">MANDATORY</span>
-                          <span className="text-xs text-foreground/70 leading-relaxed">{z}</span>
-                        </div>
-                      ))}
-                      <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/[0.06] text-xs">
-                        <div>
-                          <p className="text-[10px] text-muted-foreground/40">Evacuees</p>
-                          <p className="font-medium text-foreground/80">{((evac.estimatedEvacuees as number) / 1000)?.toFixed(0)}k</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-muted-foreground/40">Lead Time</p>
-                          <p className="font-medium text-amber-400">{evac.timeToEvacuate as string}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Shelter demand */}
-                  {shelter.estimatedShelterNeeds && (
-                    <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
-                      <p className="text-xs font-medium mb-2 flex items-center gap-2">
-                        <Building2 className="w-3.5 h-3.5 text-blue-400" />
-                        Shelter Demand
-                      </p>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <p className="text-[10px] text-muted-foreground/40">Total Need</p>
-                          <p className="font-medium">{((shelter.estimatedShelterNeeds as number) / 1000).toFixed(0)}k</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-muted-foreground/40">Special Needs</p>
-                          <p className="font-medium text-amber-400">{((shelter.specialNeedsCount as number) / 1000).toFixed(0)}k</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Immediate actions */}
-                  {actions.length > 0 && (
-                    <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
-                      <p className="text-xs font-medium mb-2 flex items-center gap-2">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                        Immediate Actions
-                      </p>
-                      <ol className="space-y-2">
-                        {actions.map((a, i) => (
-                          <li key={i} className="flex items-start gap-2 text-xs">
-                            <span className="text-[10px] font-mono text-cyan-400 bg-cyan-400/10 px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5">{i + 1}</span>
-                            <span className="text-foreground/70 leading-relaxed">{a}</span>
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
-
-                  {/* Agent recommendations */}
-                  {Object.keys(agentRecs).length > 0 && (
-                    <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
-                      <p className="text-xs font-medium mb-2 text-muted-foreground/60">Agent Recommendations</p>
-                      <div className="space-y-2.5">
-                        {[
-                          { key: 'stormWatcher', icon: '🌀', label: 'Storm Watcher' },
-                          { key: 'vulnerabilityMapper', icon: '🗺️', label: 'Vulnerability Mapper' },
-                          { key: 'resourceCoordinator', icon: '📦', label: 'Resource Coordinator' },
-                          { key: 'alertCommander', icon: '🚨', label: 'Alert Commander' },
-                        ].map(({ key, icon, label }) => agentRecs[key] ? (
-                          <div key={key}>
-                            <p className="text-[10px] text-muted-foreground/40 mb-0.5">{icon} {label}</p>
-                            <p className="text-xs text-foreground/65 leading-relaxed">{agentRecs[key]}</p>
-                          </div>
-                        ) : null)}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
+            <div className="flex-1 overflow-y-auto p-3">
+              <AnalysisContent simStatus={simStatus} analysis={analysis} params={params} />
             </div>
           </>
         )}
       </div>
+
+      {/* ── Mobile: bottom tab bar ── */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#040f1e]/95 backdrop-blur-md border-t border-white/[0.08]">
+        <div className="flex items-center h-14 px-2 gap-1">
+          <button
+            onClick={() => setMobileTab(mobileTab === 'config' ? null : 'config')}
+            className={cn(
+              'flex-1 flex flex-col items-center justify-center gap-0.5 py-2 rounded-xl transition-all text-[10px] font-mono',
+              mobileTab === 'config' ? 'text-cyan-400 bg-cyan-400/10' : 'text-muted-foreground/50'
+            )}
+          >
+            <Settings className="w-4 h-4" />
+            Config
+          </button>
+          <button
+            onClick={() => isDrawing ? stopDrawing() : startDrawing()}
+            className={cn(
+              'flex-1 flex flex-col items-center justify-center gap-0.5 py-2 rounded-xl transition-all text-[10px] font-mono',
+              isDrawing ? 'text-amber-400 bg-amber-400/10 animate-pulse' : 'text-muted-foreground/50'
+            )}
+          >
+            <Plus className="w-4 h-4" />
+            {isDrawing ? `Drawing (${track.length})` : 'Draw Track'}
+          </button>
+          <button
+            onClick={runSimulation}
+            disabled={track.length < 2 || simStatus === 'analyzing' || isDrawing}
+            className={cn(
+              'flex-1 flex flex-col items-center justify-center gap-0.5 py-2 rounded-xl transition-all text-[10px] font-mono',
+              track.length >= 2 && simStatus !== 'analyzing' && !isDrawing
+                ? 'text-emerald-400 bg-emerald-400/10'
+                : 'text-muted-foreground/30 opacity-40'
+            )}
+          >
+            {simStatus === 'analyzing' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+            {simStatus === 'analyzing' ? 'Analyzing' : 'Run'}
+          </button>
+          <button
+            onClick={() => setMobileTab(mobileTab === 'analysis' ? null : 'analysis')}
+            className={cn(
+              'flex-1 flex flex-col items-center justify-center gap-0.5 py-2 rounded-xl transition-all text-[10px] font-mono relative',
+              mobileTab === 'analysis' ? 'text-cyan-400 bg-cyan-400/10' : 'text-muted-foreground/50'
+            )}
+          >
+            <Zap className="w-4 h-4" />
+            Analysis
+            {simStatus === 'complete' && (
+              <span className="absolute top-1.5 right-2.5 w-1.5 h-1.5 rounded-full bg-cyan-400" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Mobile: sliding bottom sheet ── */}
+      {mobileTab && (
+        <div className="lg:hidden fixed inset-0 z-40 flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileTab(null)} />
+          <div className="relative bg-[#040f1e] border-t border-white/[0.08] rounded-t-2xl max-h-[75vh] flex flex-col">
+            <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0 border-b border-white/[0.06]">
+              <div className="w-8 h-1 rounded-full bg-white/20 absolute left-1/2 -translate-x-1/2 top-2" />
+              <span className="text-sm font-medium text-foreground/80">
+                {mobileTab === 'config' ? '⚙️ Storm Configuration' : '⚡ Impact Analysis'}
+              </span>
+              <button onClick={() => setMobileTab(null)} className="text-muted-foreground/50 hover:text-foreground">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto pb-4">
+              {mobileTab === 'config' ? (
+                <ConfigPanel {...configPanelProps} />
+              ) : (
+                <div className="p-4">
+                  <AnalysisContent simStatus={simStatus} analysis={analysis} params={params} />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
