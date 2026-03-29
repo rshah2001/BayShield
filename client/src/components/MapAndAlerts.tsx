@@ -7,7 +7,7 @@ import { Alert, WeatherData, ThreatLevel, VULNERABILITY_ZONES, RESOURCES } from 
 import StormIntensityChart from './StormIntensityChart';
 import VulnerabilityRadarChart from './VulnerabilityRadarChart';
 
-const MAP_IMG = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663488949635/H8uV2jDz2ia2afExqjD23w/stormmesh-map-overlay-5LmTCLxUjAjLHLTDEnaUKX.webp';
+const MAP_IMG = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663488949635/H8uV2jDz2ia2afExqjD23w/stormmesh-map-overlay_d3cce59a.png';
 
 interface MapAndAlertsProps {
   alerts: Alert[];

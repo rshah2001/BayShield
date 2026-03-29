@@ -8,7 +8,7 @@ import { WeatherData, ThreatLevel } from '@/lib/stormData';
 import LiveTicker from './LiveTicker';
 import ParticleCanvas from './ParticleCanvas';
 
-const HERO_BG = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663488949635/H8uV2jDz2ia2afExqjD23w/stormmesh-hero-bg-TNtLzMiXcWWLQTsr96NZce.webp';
+const HERO_BG = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663488949635/H8uV2jDz2ia2afExqjD23w/stormmesh-hero-bg_89bbeb97.png';
 
 interface HeroSectionProps {
   weather: WeatherData;

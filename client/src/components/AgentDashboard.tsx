@@ -8,7 +8,7 @@ import { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AgentState, AgentMessage } from '@/lib/stormData';
 
-const AGENT_NETWORK_IMG = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663488949635/H8uV2jDz2ia2afExqjD23w/stormmesh-agent-network-ZDRL6HR9H52jBwhVETKGey.webp';
+const AGENT_NETWORK_IMG = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663488949635/H8uV2jDz2ia2afExqjD23w/stormmesh-agent-network_dffd50bb.png';
 
 interface AgentDashboardProps {
   agents: AgentState[];

@@ -3,7 +3,7 @@
 // Design: Technical deep-dive into agent architecture with flow diagram
 // ============================================================
 
-const ALERT_PANEL_IMG = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663488949635/H8uV2jDz2ia2afExqjD23w/stormmesh-alert-panel-LE83x2Z5W5cZ2q7THVkKMM.webp';
+const ALERT_PANEL_IMG = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663488949635/H8uV2jDz2ia2afExqjD23w/stormmesh-alert-panel_30f4494a.png';
 
 const AGENTS_DETAIL = [
   {
