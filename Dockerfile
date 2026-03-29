@@ -10,6 +10,7 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY package.json pnpm-lock.yaml ./
+COPY patches ./patches
 COPY python-agents/requirements.txt ./python-agents/requirements.txt
 
 RUN corepack enable \
