@@ -89,8 +89,8 @@ export default function Resources() {
           <p className="text-xs text-muted-foreground mt-0.5">Shelters, supply depots, medical facilities, and evacuation routes</p>
         </div>
         {isRunning && (
-          <span className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-lg">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />LIVE
+          <span className="flex items-center gap-1.5 text-xs text-blue-300 bg-blue-400/10 border border-blue-400/20 px-2.5 py-1 rounded-lg">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-300 animate-pulse" />CAPACITY VIEW
           </span>
         )}
       </div>

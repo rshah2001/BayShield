@@ -147,12 +147,12 @@ export default function SystemMonitor() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {isConnected ? (
-            <span className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-lg">
-              <Wifi className="w-3 h-3" />SSE Connected
+            <span className="flex items-center gap-1.5 text-xs text-cyan-300 bg-cyan-400/10 border border-cyan-400/20 px-2.5 py-1 rounded-lg">
+              <Wifi className="w-3 h-3" />HEALTH STREAM OK
             </span>
           ) : (
-            <span className="flex items-center gap-1.5 text-xs text-slate-400 bg-slate-400/10 border border-slate-400/20 px-2.5 py-1 rounded-lg">
-              <WifiOff className="w-3 h-3" />Connecting...
+            <span className="flex items-center gap-1.5 text-xs text-amber-300 bg-amber-400/10 border border-amber-400/20 px-2.5 py-1 rounded-lg">
+              <WifiOff className="w-3 h-3" />HEALTH STREAM DEGRADED
             </span>
           )}
           {lastUpdated && (

@@ -65,8 +65,8 @@ export default function AgentComms() {
           <p className="text-xs text-muted-foreground mt-0.5">Real-time A2A message bus -- agent-to-agent protocol</p>
         </div>
         {isRunning && (
-          <span className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-lg">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />LIVE
+          <span className="flex items-center gap-1.5 text-xs text-violet-300 bg-violet-400/10 border border-violet-400/20 px-2.5 py-1 rounded-lg">
+            <span className="w-1.5 h-1.5 rounded-full bg-violet-300 animate-pulse" />MESSAGE BUS ACTIVE
           </span>
         )}
       </div>

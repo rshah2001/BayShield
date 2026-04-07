@@ -95,8 +95,8 @@ export default function Infrastructure() {
             {dataSourceLabel}
           </span>
           {isRunning && (
-            <span className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-lg">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />LIVE
+            <span className="flex items-center gap-1.5 text-xs text-red-300 bg-red-400/10 border border-red-400/20 px-2.5 py-1 rounded-lg">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-300 animate-pulse" />EXECUTION ACTIVE
             </span>
           )}
         </div>
